@@ -4,17 +4,19 @@ import { StyleSheet, View } from "react-native";
 import { ConsoleSelect } from "@/components/ConsoleSelect";
 import ContentContainer from "@/components/ContentContainer";
 import { GameGrid } from "@/components/GameGrid";
-import { StyledButton } from "@/components/StyledButton";
+import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
+import type { Game } from "@/types/game";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 
 export default function ListDetailScreen() {
   const { t } = useLanguage();
-  const { getList, deleteList, setListConsoles } = useLists();
+  const { getList, deleteList, setListConsoles, removeGamesFromList } =
+    useLists();
   const { addMany } = useLibrary();
   const params = useLocalSearchParams<{
     id: string;
@@ -22,6 +24,8 @@ export default function ListDetailScreen() {
     action?: string;
   }>();
   const [fullscreen, setFullscreen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const list = getList(params.id);
 
@@ -49,12 +53,41 @@ export default function ListDetailScreen() {
         : [...consoles, name]
     );
 
-  const addAllToLibrary = () => {
-    if (games.length === 0) {
-      return;
+  const toggleSelect = (game: Game) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(game.id)) {
+        next.delete(game.id);
+      } else {
+        next.add(game.id);
+      }
+      return next;
+    });
+
+  const enterSelection = (game: Game) => {
+    setSelectionMode(true);
+    toggleSelect(game);
+  };
+
+  const exitSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const selectAll = () => setSelectedIds(new Set(games.map((game) => game.id)));
+
+  const addSelectedToLibrary = () => {
+    const selected = games.filter((game) => selectedIds.has(game.id));
+    if (selected.length > 0) {
+      addMany(selected, "backlog", consoles);
+      triggerSuccess();
     }
-    addMany(games, "backlog", consoles);
-    triggerSuccess();
+    exitSelection();
+  };
+
+  const removeSelectedFromList = () => {
+    removeGamesFromList(params.id, [...selectedIds]);
+    exitSelection();
   };
 
   const confirmDelete = () =>
@@ -72,35 +105,57 @@ export default function ListDetailScreen() {
   return (
     <ContentContainer
       contentWidth="wide"
-      headerTitle={list.name}
-      rightActions={[
-        {
-          icon: fullscreen ? "fullscreen-exit" : "fullscreen",
-          onPress: () => setFullscreen(!fullscreen),
-        },
-        { icon: "delete-outline", onPress: confirmDelete },
-      ]}
+      headerTitle={
+        selectionMode
+          ? t("library_selected", { count: selectedIds.size })
+          : list.name
+      }
+      rightActions={
+        selectionMode
+          ? [
+              { icon: "select-all", onPress: selectAll },
+              { icon: "close", onPress: exitSelection },
+            ]
+          : [
+              {
+                icon: fullscreen ? "fullscreen-exit" : "fullscreen",
+                onPress: () => setFullscreen(!fullscreen),
+              },
+              { icon: "delete-outline", onPress: confirmDelete },
+            ]
+      }
     >
       <View style={styles.body}>
-        {fullscreen ? null : (
-          <>
-            <View style={styles.section}>
-              <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
-              <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
-            </View>
-            {games.length > 0 ? (
-              <StyledButton
-                onPress={addAllToLibrary}
-                text={t("list_add_all")}
-              />
-            ) : null}
-          </>
+        {selectionMode ? (
+          <View style={styles.actionRow}>
+            <HapticPressable onPress={addSelectedToLibrary}>
+              <StyledText style={styles.action}>
+                {t("list_add_to_library")}
+              </StyledText>
+            </HapticPressable>
+            <HapticPressable onPress={removeSelectedFromList}>
+              <StyledText style={styles.action}>
+                {t("list_remove_from")}
+              </StyledText>
+            </HapticPressable>
+          </View>
+        ) : null}
+
+        {selectionMode || fullscreen ? null : (
+          <View style={styles.section}>
+            <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
+            <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
+          </View>
         )}
 
         {games.length > 0 ? (
           <GameGrid
             games={games}
             getSubtitle={(game) => game.year?.toString()}
+            onLongPressGame={enterSelection}
+            onPressGame={selectionMode ? toggleSelect : undefined}
+            selectedIds={selectedIds}
+            selectionMode={selectionMode}
           />
         ) : (
           <StyledText style={styles.muted}>{t("list_empty")}</StyledText>
@@ -123,6 +178,14 @@ const styles = StyleSheet.create({
     opacity: 0.45,
     textTransform: "uppercase",
     letterSpacing: n(1),
+  },
+  actionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: n(20),
+  },
+  action: {
+    fontSize: n(16),
   },
   muted: {
     opacity: 0.6,

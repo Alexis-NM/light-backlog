@@ -92,6 +92,7 @@ const en = {
   import_error: "Could not read the list. Check the link or paste the text.",
   list_consoles: "Consoles",
   list_add_all: "Add all to library",
+  list_add_to_library: "Add to library",
   list_rename: "Rename list",
 
   // Settings
@@ -236,6 +237,7 @@ const fr: Record<TranslationKey, string> = {
     "Impossible de lire la liste. Vérifie le lien ou colle le texte.",
   list_consoles: "Consoles",
   list_add_all: "Tout ajouter à la bibliothèque",
+  list_add_to_library: "Ajouter à la bibliothèque",
   list_rename: "Renommer la liste",
 
   // Settings

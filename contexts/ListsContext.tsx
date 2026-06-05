@@ -21,6 +21,7 @@ interface ListsContextType {
   getList: (id: string) => GameList | undefined;
   lists: GameList[];
   removeGameFromList: (listId: string, gameId: number) => void;
+  removeGamesFromList: (listId: string, gameIds: number[]) => void;
   renameList: (id: string, name: string) => void;
   setListConsoles: (id: string, consoles: string[]) => void;
 }
@@ -33,6 +34,7 @@ const ListsContext = createContext<ListsContextType>({
   deleteList: () => undefined,
   addGameToList: () => undefined,
   removeGameFromList: () => undefined,
+  removeGamesFromList: () => undefined,
   renameList: () => undefined,
   setListConsoles: () => undefined,
   clearAll: () => undefined,
@@ -160,6 +162,29 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     [lists, setLists]
   );
 
+  const removeGamesFromList = useCallback(
+    (listId: string, gameIds: number[]) => {
+      const idSet = new Set(gameIds);
+      setLists(
+        lists.map((list) => {
+          if (list.id !== listId) {
+            return list;
+          }
+          const games = { ...list.games };
+          for (const id of gameIds) {
+            delete games[id];
+          }
+          return {
+            ...list,
+            gameIds: list.gameIds.filter((id) => !idSet.has(id)),
+            games,
+          };
+        })
+      );
+    },
+    [lists, setLists]
+  );
+
   const clearAll = useCallback(() => setLists([]), [setLists]);
 
   const value = useMemo(
@@ -171,6 +196,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       deleteList,
       addGameToList,
       removeGameFromList,
+      removeGamesFromList,
       renameList,
       setListConsoles,
       clearAll,
@@ -184,6 +210,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       deleteList,
       addGameToList,
       removeGameFromList,
+      removeGamesFromList,
       renameList,
       clearAll,
     ]
