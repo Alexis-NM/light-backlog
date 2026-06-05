@@ -74,6 +74,21 @@ const en = {
   list_pick: "Pick a list",
   list_none: "You have no lists yet.",
 
+  // Import
+  list_import: "Import",
+  import_title: "Import a list",
+  import_source_label: "Backloggd URL, raw CSV/MD link, or pasted list",
+  import_source_ph: "https://backloggd.com/u/…/list/…",
+  import_name_label: "List name",
+  import_name_ph: "Imported list",
+  import_to_library: "Also add to my library",
+  import_run: "Import",
+  import_fetching: "Fetching the list…",
+  import_matching: "Matching games… {done}/{total}",
+  import_done: "Imported {imported} games ({notFound} not found)",
+  import_empty: "No games found in the source.",
+  import_error: "Could not read the list. Check the link or paste the text.",
+
   // Settings
   settings_title: "Settings",
   settings_credentials: "IGDB Credentials",
@@ -196,6 +211,22 @@ const fr: Record<TranslationKey, string> = {
   list_remove_from: "Retirer de la liste",
   list_pick: "Choisis une liste",
   list_none: "Tu n'as pas encore de liste.",
+
+  // Import
+  list_import: "Importer",
+  import_title: "Importer une liste",
+  import_source_label: "URL Backloggd, lien CSV/MD brut, ou liste collée",
+  import_source_ph: "https://backloggd.com/u/…/list/…",
+  import_name_label: "Nom de la liste",
+  import_name_ph: "Liste importée",
+  import_to_library: "Ajouter aussi à ma bibliothèque",
+  import_run: "Importer",
+  import_fetching: "Récupération de la liste…",
+  import_matching: "Recherche des jeux… {done}/{total}",
+  import_done: "{imported} jeux importés ({notFound} introuvables)",
+  import_empty: "Aucun jeu trouvé dans la source.",
+  import_error:
+    "Impossible de lire la liste. Vérifie le lien ou colle le texte.",
 
   // Settings
   settings_title: "Réglages",

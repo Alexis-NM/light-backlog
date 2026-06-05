@@ -12,6 +12,7 @@ interface ListsContextType {
   addGameToList: (listId: string, game: Game) => void;
   clearAll: () => void;
   createList: (name: string) => string;
+  createListWithGames: (name: string, games: Game[]) => string;
   deleteList: (id: string) => void;
   getList: (id: string) => GameList | undefined;
   lists: GameList[];
@@ -22,6 +23,7 @@ const ListsContext = createContext<ListsContextType>({
   lists: [],
   getList: () => undefined,
   createList: () => "",
+  createListWithGames: () => "",
   deleteList: () => undefined,
   addGameToList: () => undefined,
   removeGameFromList: () => undefined,
@@ -50,6 +52,30 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
         name: name.trim(),
         gameIds: [],
         games: {},
+        createdAt: Date.now(),
+      };
+      setLists([list, ...lists]);
+      return id;
+    },
+    [lists, setLists]
+  );
+
+  const createListWithGames = useCallback(
+    (name: string, games: Game[]) => {
+      const id = makeId();
+      const gamesMap: Record<number, Game> = {};
+      const gameIds: number[] = [];
+      for (const game of games) {
+        if (!gamesMap[game.id]) {
+          gamesMap[game.id] = game;
+          gameIds.push(game.id);
+        }
+      }
+      const list: GameList = {
+        id,
+        name: name.trim(),
+        gameIds,
+        games: gamesMap,
         createdAt: Date.now(),
       };
       setLists([list, ...lists]);
@@ -108,6 +134,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       lists,
       getList,
       createList,
+      createListWithGames,
       deleteList,
       addGameToList,
       removeGameFromList,
@@ -117,6 +144,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       lists,
       getList,
       createList,
+      createListWithGames,
       deleteList,
       addGameToList,
       removeGameFromList,

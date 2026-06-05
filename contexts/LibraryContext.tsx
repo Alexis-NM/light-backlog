@@ -16,6 +16,7 @@ import {
 type Entries = Record<number, LibraryEntry>;
 
 interface LibraryContextType {
+  addMany: (games: Game[], status: GameStatus) => void;
   addPlatform: (game: Game, platform: string) => void;
   clearAll: () => void;
   entries: Entries;
@@ -31,6 +32,7 @@ const LibraryContext = createContext<LibraryContextType>({
   getEntry: () => undefined,
   setStatus: () => undefined,
   setRating: () => undefined,
+  addMany: () => undefined,
   addPlatform: () => undefined,
   togglePlatform: () => undefined,
   removeEntry: () => undefined,
@@ -95,6 +97,26 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
     [entries, upsert]
   );
 
+  const addMany = useCallback(
+    (games: Game[], status: GameStatus) => {
+      const now = Date.now();
+      const next = { ...entries };
+      for (const game of games) {
+        const existing = next[game.id];
+        next[game.id] = {
+          game,
+          status: existing?.status ?? status,
+          rating: existing?.rating ?? 0,
+          platforms: existing ? entryPlatforms(existing) : [],
+          addedAt: existing?.addedAt ?? now,
+          updatedAt: now,
+        };
+      }
+      setEntries(next);
+    },
+    [entries, setEntries]
+  );
+
   const removeEntry = useCallback(
     (id: number) => {
       const next = { ...entries };
@@ -114,6 +136,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       getEntry,
       setStatus,
       setRating,
+      addMany,
       addPlatform,
       togglePlatform,
       removeEntry,
@@ -124,6 +147,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       getEntry,
       setStatus,
       setRating,
+      addMany,
       addPlatform,
       togglePlatform,
       removeEntry,
