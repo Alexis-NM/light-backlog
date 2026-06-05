@@ -11,7 +11,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import type { TranslationKey } from "@/i18n/translations";
-import { GAME_STATUSES, type Game, type GameStatus } from "@/types/game";
+import {
+  entryPlatforms,
+  GAME_STATUSES,
+  type Game,
+  type GameStatus,
+} from "@/types/game";
 import { n } from "@/utils/scaling";
 
 type Filter = "all" | GameStatus;
@@ -66,8 +71,8 @@ export default function LibraryScreen() {
   const platforms = useMemo(() => {
     const set = new Set<string>();
     for (const entry of sorted) {
-      if (entry.platform) {
-        set.add(entry.platform);
+      for (const platform of entryPlatforms(entry)) {
+        set.add(platform);
       }
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
@@ -84,7 +89,10 @@ export default function LibraryScreen() {
         .filter(
           (entry) => filters.status === "all" || entry.status === filters.status
         )
-        .filter((entry) => !activePlatform || entry.platform === activePlatform)
+        .filter(
+          (entry) =>
+            !activePlatform || entryPlatforms(entry).includes(activePlatform)
+        )
         .map((entry) => entry.game),
     [sorted, filters.status, activePlatform]
   );

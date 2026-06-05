@@ -7,15 +7,15 @@ import { HapticPressable } from "@/components/HapticPressable";
 import { StarRating } from "@/components/StarRating";
 import { StyledButton } from "@/components/StyledButton";
 import { StyledText } from "@/components/StyledText";
+import { EXTRA_CONSOLES } from "@/constants/consoles";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
-import { usePreferredConsole } from "@/contexts/PreferredConsoleContext";
 import type { TranslationKey } from "@/i18n/translations";
 import { type GameDetails, getGameDetails } from "@/services/igdb";
 import { translateText } from "@/services/translate";
-import { GAME_STATUSES, type Game } from "@/types/game";
+import { entryPlatforms, GAME_STATUSES, type Game } from "@/types/game";
 import { openImageViewer } from "@/utils/navigation";
 import { n } from "@/utils/scaling";
 
@@ -25,14 +25,9 @@ export default function GameDetailScreen() {
   const { t, language } = useLanguage();
   const { invertColors } = useInvertColors();
   const { auth } = useCredentials();
-  const { preferredConsole, setPreferredConsole } = usePreferredConsole();
-  const { getEntry, setStatus, setRating, setPlatform, removeEntry } =
+  const { getEntry, setStatus, setRating, togglePlatform, removeEntry } =
     useLibrary();
-  const params = useLocalSearchParams<{
-    id: string;
-    game?: string;
-    platform?: string;
-  }>();
+  const params = useLocalSearchParams<{ id: string; game?: string }>();
 
   const parsedGame = useMemo<Game | null>(() => {
     if (!params.game) {
@@ -49,7 +44,6 @@ export default function GameDetailScreen() {
   const [translatedSummary, setTranslatedSummary] = useState<string | null>(
     null
   );
-  const [picked, setPicked] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!(parsedGame && auth)) {
@@ -96,31 +90,20 @@ export default function GameDetailScreen() {
   const entry = getEntry(game.id);
   const rating = entry?.rating ?? 0;
   const borderColor = invertColors ? "black" : "white";
+  const selected = entry ? entryPlatforms(entry) : [];
+
+  const consoleOptions = Array.from(
+    new Set([
+      ...(game.platforms?.map((p) => p.name) ?? []),
+      ...EXTRA_CONSOLES,
+      ...selected,
+    ])
+  );
 
   let summaryText = details?.summary;
   if (summaryText && language === "fr" && translatedSummary) {
     summaryText = translatedSummary;
   }
-
-  const platformNames = game.platforms?.map((p) => p.name) ?? [];
-  const preferredInGame =
-    preferredConsole && platformNames.includes(preferredConsole)
-      ? preferredConsole
-      : undefined;
-  const selectedPlatform =
-    picked ??
-    entry?.platform ??
-    params.platform ??
-    preferredInGame ??
-    (platformNames.length === 1 ? platformNames[0] : undefined);
-
-  const choosePlatform = (name: string) => {
-    setPicked(name);
-    setPreferredConsole(name);
-    if (entry) {
-      setPlatform(game, name);
-    }
-  };
 
   return (
     <ContentContainer headerTitle={game.name}>
@@ -135,30 +118,28 @@ export default function GameDetailScreen() {
           </View>
         </View>
 
-        {game.platforms?.length ? (
-          <View style={styles.section}>
-            <StyledText style={styles.sectionLabel}>
-              {t("game_platforms")}
-            </StyledText>
-            <View style={styles.chipRow}>
-              {game.platforms.map((p) => (
-                <HapticPressable
-                  key={p.id}
-                  onPress={() => choosePlatform(p.name)}
+        <View style={styles.section}>
+          <StyledText style={styles.sectionLabel}>
+            {t("game_platforms")}
+          </StyledText>
+          <View style={styles.chipRow}>
+            {consoleOptions.map((name) => (
+              <HapticPressable
+                key={name}
+                onPress={() => togglePlatform(game, name)}
+              >
+                <StyledText
+                  style={[
+                    styles.platform,
+                    selected.includes(name) && styles.chipActive,
+                  ]}
                 >
-                  <StyledText
-                    style={[
-                      styles.platform,
-                      selectedPlatform === p.name && styles.chipActive,
-                    ]}
-                  >
-                    {p.name}
-                  </StyledText>
-                </HapticPressable>
-              ))}
-            </View>
+                  {name}
+                </StyledText>
+              </HapticPressable>
+            ))}
           </View>
-        ) : null}
+        </View>
 
         <View style={styles.section}>
           <StyledText style={styles.sectionLabel}>
@@ -168,7 +149,7 @@ export default function GameDetailScreen() {
             {GAME_STATUSES.map((status) => (
               <HapticPressable
                 key={status}
-                onPress={() => setStatus(game, status, selectedPlatform)}
+                onPress={() => setStatus(game, status)}
               >
                 <StyledText
                   style={[
@@ -188,7 +169,7 @@ export default function GameDetailScreen() {
             {t("game_rating")}
           </StyledText>
           <StarRating
-            onChange={(value) => setRating(game, value, selectedPlatform)}
+            onChange={(value) => setRating(game, value)}
             value={rating}
           />
           <StyledText style={styles.meta}>

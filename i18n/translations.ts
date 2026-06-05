@@ -113,6 +113,7 @@ const en = {
   family_nintendo: "Nintendo",
   family_sega: "Sega",
   family_pc: "PC",
+  family_mobile: "Mobile",
   family_retro: "Retro & Arcade",
   family_other: "Other",
 } as const;
@@ -235,6 +236,7 @@ const fr: Record<TranslationKey, string> = {
   family_nintendo: "Nintendo",
   family_sega: "Sega",
   family_pc: "PC",
+  family_mobile: "Mobile",
   family_retro: "Rétro & Arcade",
   family_other: "Autres",
 };

@@ -1,7 +1,6 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
 import { Navbar, type TabConfigItem } from "@/components/Navbar";
-import { useBrowse } from "@/contexts/BrowseContext";
 import { useFullscreen } from "@/contexts/FullscreenContext";
 
 export const TABS_CONFIG: readonly TabConfigItem[] = [
@@ -12,17 +11,14 @@ export const TABS_CONFIG: readonly TabConfigItem[] = [
 ] as const;
 
 function AppTabBar(props: BottomTabBarProps) {
-  const { selectedConsole } = useBrowse();
-  const { libraryFullscreen } = useFullscreen();
+  const { libraryFullscreen, gamesFullscreen } = useFullscreen();
   const activeScreenName = props.state.routes[props.state.index].name;
 
-  // Hide the navbar while browsing a console's games (immersive full screen).
-  if (activeScreenName === "games" && selectedConsole) {
+  // Hide the navbar in the library or games full-screen mode.
+  if (activeScreenName === "index" && libraryFullscreen) {
     return null;
   }
-
-  // Hide the navbar in the library's full-screen grid mode.
-  if (activeScreenName === "index" && libraryFullscreen) {
+  if (activeScreenName === "games" && gamesFullscreen) {
     return null;
   }
 

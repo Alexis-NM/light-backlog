@@ -42,6 +42,9 @@ export const CONSOLES: readonly Console[] = [
   { id: 6, name: "PC (Windows)", family: "pc" },
   { id: 14, name: "Mac", family: "pc" },
 
+  { id: 34, name: "Android", family: "mobile" },
+  { id: 39, name: "iOS", family: "mobile" },
+
   { id: 52, name: "Arcade", family: "retro" },
   { id: 59, name: "Atari 2600", family: "retro" },
   { id: 61, name: "Atari Lynx", family: "retro" },
@@ -61,6 +64,11 @@ export const CONSOLE_FAMILIES: readonly string[] = [
   "nintendo",
   "sega",
   "pc",
+  "mobile",
   "retro",
   "other",
 ];
+
+// Consoles absent from IGDB's platform list, offered as manual tags in the
+// game detail (e.g. Steam Deck — its games are filed under PC/Linux on IGDB).
+export const EXTRA_CONSOLES: readonly string[] = ["Steam Deck"];

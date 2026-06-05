@@ -4,28 +4,28 @@ import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
 import { GameGrid } from "@/components/GameGrid";
 import { HapticPressable } from "@/components/HapticPressable";
+import type { RightAction } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { CONSOLE_FAMILIES, CONSOLES } from "@/constants/consoles";
 import { useBrowse } from "@/contexts/BrowseContext";
 import { useCredentials } from "@/contexts/CredentialsContext";
+import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
-import { usePreferredConsole } from "@/contexts/PreferredConsoleContext";
 import { usePlatformGames } from "@/hooks/usePlatformGames";
 import type { TranslationKey } from "@/i18n/translations";
 import type { Game } from "@/types/game";
 import { triggerHaptic, triggerSuccess } from "@/utils/haptics";
-import { openGame } from "@/utils/navigation";
 import { n } from "@/utils/scaling";
 
 export default function GamesScreen() {
   const { t } = useLanguage();
   const { auth } = useCredentials();
   const { invertColors } = useInvertColors();
+  const { gamesFullscreen, setGamesFullscreen } = useFullscreen();
   const { selectedConsole, setSelectedConsole } = useBrowse();
-  const { getEntry, setStatus, removeEntry } = useLibrary();
-  const { setPreferredConsole } = usePreferredConsole();
+  const { getEntry, addPlatform, removeEntry } = useLibrary();
   const { games, phase, loadingMore, errorText, loadMore } = usePlatformGames(
     selectedConsole?.id ?? null
   );
@@ -46,9 +46,18 @@ export default function GamesScreen() {
     );
   }
 
+  const fullscreenAction: RightAction = {
+    icon: gamesFullscreen ? "fullscreen-exit" : "fullscreen",
+    onPress: () => setGamesFullscreen(!gamesFullscreen),
+  };
+
   if (!selectedConsole) {
     return (
-      <ContentContainer headerTitle={t("games_title")} hideBackButton>
+      <ContentContainer
+        headerTitle={t("games_title")}
+        hideBackButton
+        rightActions={[fullscreenAction]}
+      >
         <View style={styles.body}>
           <StyledText style={styles.intro}>
             {t("games_choose_console")}
@@ -88,9 +97,7 @@ export default function GamesScreen() {
       triggerHaptic();
       return;
     }
-    const name = platformNameFor(game);
-    setStatus(game, "backlog", name);
-    setPreferredConsole(name);
+    addPlatform(game, platformNameFor(game));
     triggerSuccess();
   };
 
@@ -100,7 +107,10 @@ export default function GamesScreen() {
       headerTitle={selectedConsole.name}
       hideBackButton
       onEndReached={loadMore}
-      rightAction={{ icon: "apps", onPress: () => setSelectedConsole(null) }}
+      rightActions={[
+        { icon: "apps", onPress: () => setSelectedConsole(null) },
+        fullscreenAction,
+      ]}
     >
       {phase === "loading" ? (
         <View style={styles.centered}>
@@ -123,7 +133,6 @@ export default function GamesScreen() {
             getInLibrary={(game) => Boolean(getEntry(game.id))}
             getSubtitle={(game) => game.year?.toString()}
             onDoublePressGame={quickToggle}
-            onPressGame={(game) => openGame(game, platformNameFor(game))}
           />
           {loadingMore ? (
             <ActivityIndicator color={spinnerColor} style={styles.more} />

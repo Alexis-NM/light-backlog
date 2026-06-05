@@ -23,10 +23,20 @@ export interface Game {
 export interface LibraryEntry {
   addedAt: number;
   game: Game;
+  /** @deprecated kept for migration — use `platforms` */
   platform?: string;
+  platforms?: string[];
   rating: number;
   status: GameStatus;
   updatedAt: number;
+}
+
+/** Consoles a library entry is filed under (migrates the legacy single field). */
+export function entryPlatforms(entry: LibraryEntry): string[] {
+  if (entry.platforms) {
+    return entry.platforms;
+  }
+  return entry.platform ? [entry.platform] : [];
 }
 
 export interface GameList {
