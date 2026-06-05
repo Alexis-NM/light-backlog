@@ -16,7 +16,7 @@ import {
 type Entries = Record<number, LibraryEntry>;
 
 interface LibraryContextType {
-  addMany: (games: Game[], status: GameStatus) => void;
+  addMany: (games: Game[], status: GameStatus, platforms?: string[]) => void;
   addPlatform: (game: Game, platform: string) => void;
   clearAll: () => void;
   entries: Entries;
@@ -98,16 +98,20 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const addMany = useCallback(
-    (games: Game[], status: GameStatus) => {
+    (games: Game[], status: GameStatus, platforms?: string[]) => {
       const now = Date.now();
       const next = { ...entries };
       for (const game of games) {
         const existing = next[game.id];
+        const current = existing ? entryPlatforms(existing) : [];
+        const merged = platforms
+          ? Array.from(new Set([...current, ...platforms]))
+          : current;
         next[game.id] = {
           game,
           status: existing?.status ?? status,
           rating: existing?.rating ?? 0,
-          platforms: existing ? entryPlatforms(existing) : [],
+          platforms: merged,
           addedAt: existing?.addedAt ?? now,
           updatedAt: now,
         };

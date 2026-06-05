@@ -88,6 +88,8 @@ const en = {
   import_done: "Imported {imported} games ({notFound} not found)",
   import_empty: "No games found in the source.",
   import_error: "Could not read the list. Check the link or paste the text.",
+  list_consoles: "Consoles",
+  list_add_all: "Add all to library",
 
   // Settings
   settings_title: "Settings",
@@ -227,6 +229,8 @@ const fr: Record<TranslationKey, string> = {
   import_empty: "Aucun jeu trouvé dans la source.",
   import_error:
     "Impossible de lire la liste. Vérifie le lien ou colle le texte.",
+  list_consoles: "Consoles",
+  list_add_all: "Tout ajouter à la bibliothèque",
 
   // Settings
   settings_title: "Réglages",

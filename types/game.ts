@@ -40,6 +40,7 @@ export function entryPlatforms(entry: LibraryEntry): string[] {
 }
 
 export interface GameList {
+  consoles?: string[];
   createdAt: number;
   gameIds: number[];
   games: Record<number, Game>;

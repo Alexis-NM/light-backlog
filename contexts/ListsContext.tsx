@@ -12,11 +12,16 @@ interface ListsContextType {
   addGameToList: (listId: string, game: Game) => void;
   clearAll: () => void;
   createList: (name: string) => string;
-  createListWithGames: (name: string, games: Game[]) => string;
+  createListWithGames: (
+    name: string,
+    games: Game[],
+    consoles?: string[]
+  ) => string;
   deleteList: (id: string) => void;
   getList: (id: string) => GameList | undefined;
   lists: GameList[];
   removeGameFromList: (listId: string, gameId: number) => void;
+  setListConsoles: (id: string, consoles: string[]) => void;
 }
 
 const ListsContext = createContext<ListsContextType>({
@@ -27,6 +32,7 @@ const ListsContext = createContext<ListsContextType>({
   deleteList: () => undefined,
   addGameToList: () => undefined,
   removeGameFromList: () => undefined,
+  setListConsoles: () => undefined,
   clearAll: () => undefined,
 });
 
@@ -61,7 +67,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const createListWithGames = useCallback(
-    (name: string, games: Game[]) => {
+    (name: string, games: Game[], consoles?: string[]) => {
       const id = makeId();
       const gamesMap: Record<number, Game> = {};
       const gameIds: number[] = [];
@@ -76,10 +82,24 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
         name: name.trim(),
         gameIds,
         games: gamesMap,
+        consoles: consoles && consoles.length > 0 ? consoles : undefined,
         createdAt: Date.now(),
       };
       setLists([list, ...lists]);
       return id;
+    },
+    [lists, setLists]
+  );
+
+  const setListConsoles = useCallback(
+    (id: string, consoles: string[]) => {
+      setLists(
+        lists.map((list) =>
+          list.id === id
+            ? { ...list, consoles: consoles.length > 0 ? consoles : undefined }
+            : list
+        )
+      );
     },
     [lists, setLists]
   );
@@ -138,6 +158,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       deleteList,
       addGameToList,
       removeGameFromList,
+      setListConsoles,
       clearAll,
     }),
     [
@@ -145,6 +166,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       getList,
       createList,
       createListWithGames,
+      setListConsoles,
       deleteList,
       addGameToList,
       removeGameFromList,

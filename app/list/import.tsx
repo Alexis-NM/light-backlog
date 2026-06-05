@@ -6,6 +6,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { ConsoleSelect } from "@/components/ConsoleSelect";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
 import { StyledButton } from "@/components/StyledButton";
@@ -36,7 +37,15 @@ export default function ImportListScreen() {
 
   const [name, setName] = useState("");
   const [source, setSource] = useState("");
+  const [consoles, setConsoles] = useState<string[]>([]);
   const [toLibrary, setToLibrary] = useState(false);
+
+  const toggleConsole = (consoleName: string) =>
+    setConsoles((current) =>
+      current.includes(consoleName)
+        ? current.filter((c) => c !== consoleName)
+        : [...current, consoleName]
+    );
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [message, setMessage] = useState("");
@@ -99,10 +108,11 @@ export default function ImportListScreen() {
 
     const created = createListWithGames(
       name.trim() || t("import_name_ph"),
-      matched
+      matched,
+      consoles
     );
     if (toLibrary && matched.length > 0) {
-      addMany(matched, "backlog");
+      addMany(matched, "backlog", consoles);
     }
     setListId(created);
     setMessage(
@@ -148,6 +158,11 @@ export default function ImportListScreen() {
             style={[styles.source, { color, borderBottomColor: color }]}
             value={source}
           />
+        </View>
+
+        <View style={styles.field}>
+          <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
+          <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
         </View>
 
         <ToggleSwitch
