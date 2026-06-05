@@ -9,6 +9,18 @@ interface. Game data comes from [IGDB](https://www.igdb.com) (by Twitch).
 Built on top of [light-template](https://github.com/vandamd/light-template)
 (Expo + expo-router).
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/library.png" width="240" alt="Library with status and console filters" />
+  <img src="screenshots/games.png" width="240" alt="Browse games by console" />
+  <img src="screenshots/game.png" width="240" alt="Game detail: console, status, rating" />
+</p>
+<p align="center">
+  <img src="screenshots/description.png" width="240" alt="Description and screenshots" />
+  <img src="screenshots/viewer.png" width="240" alt="Full-screen screenshot viewer" />
+</p>
+
 ## Features
 
 - **Library** — your collection, filterable by **status** (Playing / Played /
