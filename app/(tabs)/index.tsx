@@ -9,6 +9,7 @@ import { StyledText } from "@/components/StyledText";
 import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
+import { useSort } from "@/contexts/SortContext";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import type { TranslationKey } from "@/i18n/translations";
 import {
@@ -16,6 +17,7 @@ import {
   GAME_STATUSES,
   type Game,
   type GameStatus,
+  type LibraryEntry,
 } from "@/types/game";
 import { n } from "@/utils/scaling";
 
@@ -58,6 +60,7 @@ export default function LibraryScreen() {
   const { t } = useLanguage();
   const { entries, setStatusMany, removeMany } = useLibrary();
   const { libraryFullscreen, setLibraryFullscreen } = useFullscreen();
+  const { librarySort } = useSort();
   const [filters, setFilters] = usePersistedState<LibraryFilters>(
     "library_filters",
     DEFAULT_FILTERS
@@ -78,10 +81,21 @@ export default function LibraryScreen() {
     }
   }, [params.confirmed, params.action, removeMany, selectedIds]);
 
-  const sorted = useMemo(
-    () => Object.values(entries).sort((a, b) => b.updatedAt - a.updatedAt),
-    [entries]
-  );
+  const sorted = useMemo(() => {
+    const list = Object.values(entries);
+    const byName = (a: LibraryEntry, b: LibraryEntry) =>
+      a.game.name.localeCompare(b.game.name);
+    switch (librarySort) {
+      case "alpha_desc":
+        return list.sort((a, b) => byName(b, a));
+      case "recent":
+        return list.sort((a, b) => b.updatedAt - a.updatedAt);
+      case "rating":
+        return list.sort((a, b) => b.rating - a.rating || byName(a, b));
+      default:
+        return list.sort(byName);
+    }
+  }, [entries, librarySort]);
 
   const platforms = useMemo(() => {
     const set = new Set<string>();

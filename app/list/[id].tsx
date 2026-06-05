@@ -10,9 +10,16 @@ import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
+import { useSort } from "@/contexts/SortContext";
 import type { Game } from "@/types/game";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
+
+function sortGamesByName(games: Game[], desc: boolean): Game[] {
+  return [...games].sort((a, b) =>
+    desc ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
+  );
+}
 
 export default function ListDetailScreen() {
   const { t } = useLanguage();
@@ -20,6 +27,7 @@ export default function ListDetailScreen() {
     useLists();
   const { addMany } = useLibrary();
   const { listFullscreen, setListFullscreen } = useFullscreen();
+  const { listSort } = useSort();
   const params = useLocalSearchParams<{
     id: string;
     confirmed?: string;
@@ -56,9 +64,13 @@ export default function ListDetailScreen() {
     return <ContentContainer headerTitle=" " />;
   }
 
-  const games = list.gameIds
+  const orderedGames = list.gameIds
     .map((gameId) => list.games[gameId])
     .filter((game) => game !== undefined);
+  const games =
+    listSort === "recent"
+      ? orderedGames
+      : sortGamesByName(orderedGames, listSort === "alpha_desc");
   const consoles = list.consoles ?? [];
 
   const toggleConsole = (name: string) =>

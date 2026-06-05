@@ -11,6 +11,7 @@ import {
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import { ListsProvider } from "@/contexts/ListsContext";
+import { SortProvider } from "@/contexts/SortContext";
 
 function RootLayout() {
   const { invertColors } = useInvertColors();
@@ -38,8 +39,10 @@ export default function App() {
               <ListsProvider>
                 <BrowseProvider>
                   <FullscreenProvider>
-                    <StatusBar hidden />
-                    <RootLayout />
+                    <SortProvider>
+                      <StatusBar hidden />
+                      <RootLayout />
+                    </SortProvider>
                   </FullscreenProvider>
                 </BrowseProvider>
               </ListsProvider>

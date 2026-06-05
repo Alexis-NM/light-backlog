@@ -112,6 +112,14 @@ const en = {
     "Delete every game and list? This cannot be undone.",
   settings_creds_set: "Configured",
   settings_creds_not_set: "Not set",
+  settings_sort_library: "Library sort",
+  settings_sort_lists: "List sort",
+
+  // Sorting
+  sort_alpha: "A-Z",
+  sort_alpha_desc: "Z-A",
+  sort_recent: "Recently added",
+  sort_rating: "Rating",
 
   // Credentials
   creds_title: "IGDB Credentials",
@@ -262,6 +270,14 @@ const fr: Record<TranslationKey, string> = {
     "Supprimer tous les jeux et listes ? Action irréversible.",
   settings_creds_set: "Configurés",
   settings_creds_not_set: "Non définis",
+  settings_sort_library: "Tri biblio",
+  settings_sort_lists: "Tri listes",
+
+  // Sorting
+  sort_alpha: "A-Z",
+  sort_alpha_desc: "Z-A",
+  sort_recent: "Récemment ajouté",
+  sort_rating: "Note",
 
   // Credentials
   creds_title: "Identifiants IGDB",
