@@ -6,6 +6,7 @@ import ContentContainer from "@/components/ContentContainer";
 import { GameGrid } from "@/components/GameGrid";
 import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
+import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
@@ -18,12 +19,12 @@ export default function ListDetailScreen() {
   const { getList, deleteList, setListConsoles, removeGamesFromList } =
     useLists();
   const { addMany } = useLibrary();
+  const { listFullscreen, setListFullscreen } = useFullscreen();
   const params = useLocalSearchParams<{
     id: string;
     confirmed?: string;
     action?: string;
   }>();
-  const [fullscreen, setFullscreen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
@@ -118,8 +119,8 @@ export default function ListDetailScreen() {
             ]
           : [
               {
-                icon: fullscreen ? "fullscreen-exit" : "fullscreen",
-                onPress: () => setFullscreen(!fullscreen),
+                icon: listFullscreen ? "fullscreen-exit" : "fullscreen",
+                onPress: () => setListFullscreen(!listFullscreen),
               },
               { icon: "delete-outline", onPress: confirmDelete },
             ]
@@ -141,7 +142,7 @@ export default function ListDetailScreen() {
           </View>
         ) : null}
 
-        {selectionMode || fullscreen ? null : (
+        {selectionMode || listFullscreen ? null : (
           <View style={styles.section}>
             <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
             <ConsoleSelect onToggle={toggleConsole} selected={consoles} />

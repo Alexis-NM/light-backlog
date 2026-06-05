@@ -4,19 +4,23 @@ import { usePersistedState } from "@/hooks/usePersistedState";
 interface FullscreenContextType {
   gamesFullscreen: boolean;
   libraryFullscreen: boolean;
+  listFullscreen: boolean;
   setGamesFullscreen: (value: boolean) => Promise<void>;
   setLibraryFullscreen: (value: boolean) => Promise<void>;
+  setListFullscreen: (value: boolean) => Promise<void>;
 }
+
+const throwOutsideProvider = () => {
+  throw new Error("useFullscreen must be used within FullscreenProvider");
+};
 
 const FullscreenContext = createContext<FullscreenContextType>({
   libraryFullscreen: false,
-  setLibraryFullscreen: () => {
-    throw new Error("useFullscreen must be used within FullscreenProvider");
-  },
+  setLibraryFullscreen: throwOutsideProvider,
   gamesFullscreen: false,
-  setGamesFullscreen: () => {
-    throw new Error("useFullscreen must be used within FullscreenProvider");
-  },
+  setGamesFullscreen: throwOutsideProvider,
+  listFullscreen: false,
+  setListFullscreen: throwOutsideProvider,
 });
 
 export const useFullscreen = () => useContext(FullscreenContext);
@@ -30,6 +34,10 @@ export const FullscreenProvider = ({ children }: { children: ReactNode }) => {
     "games_fullscreen",
     false
   );
+  const [listFullscreen, setListFullscreen] = usePersistedState(
+    "list_fullscreen",
+    false
+  );
 
   const value = useMemo(
     () => ({
@@ -37,12 +45,16 @@ export const FullscreenProvider = ({ children }: { children: ReactNode }) => {
       setLibraryFullscreen,
       gamesFullscreen,
       setGamesFullscreen,
+      listFullscreen,
+      setListFullscreen,
     }),
     [
       libraryFullscreen,
       setLibraryFullscreen,
       gamesFullscreen,
       setGamesFullscreen,
+      listFullscreen,
+      setListFullscreen,
     ]
   );
 
