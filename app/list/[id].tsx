@@ -73,25 +73,13 @@ export default function ListDetailScreen() {
     <ContentContainer
       contentWidth="wide"
       headerTitle={list.name}
-      rightActions={
-        fullscreen
-          ? [
-              { icon: "fullscreen-exit", onPress: () => setFullscreen(false) },
-              { icon: "delete-outline", onPress: confirmDelete },
-            ]
-          : [
-              {
-                icon: "edit",
-                onPress: () =>
-                  router.push({
-                    pathname: "/list/rename",
-                    params: { id: params.id },
-                  }),
-              },
-              { icon: "fullscreen", onPress: () => setFullscreen(true) },
-              { icon: "delete-outline", onPress: confirmDelete },
-            ]
-      }
+      rightActions={[
+        {
+          icon: fullscreen ? "fullscreen-exit" : "fullscreen",
+          onPress: () => setFullscreen(!fullscreen),
+        },
+        { icon: "delete-outline", onPress: confirmDelete },
+      ]}
     >
       <View style={styles.body}>
         {fullscreen ? null : (

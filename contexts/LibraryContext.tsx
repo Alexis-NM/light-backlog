@@ -22,8 +22,10 @@ interface LibraryContextType {
   entries: Entries;
   getEntry: (id: number) => LibraryEntry | undefined;
   removeEntry: (id: number) => void;
+  removeMany: (ids: number[]) => void;
   setRating: (game: Game, rating: number) => void;
   setStatus: (game: Game, status: GameStatus) => void;
+  setStatusMany: (ids: number[], status: GameStatus) => void;
   togglePlatform: (game: Game, platform: string) => void;
 }
 
@@ -36,6 +38,8 @@ const LibraryContext = createContext<LibraryContextType>({
   addPlatform: () => undefined,
   togglePlatform: () => undefined,
   removeEntry: () => undefined,
+  removeMany: () => undefined,
+  setStatusMany: () => undefined,
   clearAll: () => undefined,
 });
 
@@ -130,6 +134,32 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
     [entries, setEntries]
   );
 
+  const removeMany = useCallback(
+    (ids: number[]) => {
+      const next = { ...entries };
+      for (const id of ids) {
+        delete next[id];
+      }
+      setEntries(next);
+    },
+    [entries, setEntries]
+  );
+
+  const setStatusMany = useCallback(
+    (ids: number[], status: GameStatus) => {
+      const now = Date.now();
+      const next = { ...entries };
+      for (const id of ids) {
+        const existing = next[id];
+        if (existing) {
+          next[id] = { ...existing, status, updatedAt: now };
+        }
+      }
+      setEntries(next);
+    },
+    [entries, setEntries]
+  );
+
   const clearAll = useCallback(() => setEntries({}), [setEntries]);
 
   const getEntry = useCallback((id: number) => entries[id], [entries]);
@@ -144,6 +174,8 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       addPlatform,
       togglePlatform,
       removeEntry,
+      removeMany,
+      setStatusMany,
       clearAll,
     }),
     [
@@ -151,6 +183,8 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       getEntry,
       setStatus,
       setRating,
+      removeMany,
+      setStatusMany,
       addMany,
       addPlatform,
       togglePlatform,

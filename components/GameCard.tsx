@@ -12,10 +12,13 @@ import { StyledText } from "./StyledText";
 const DOUBLE_TAP_MS = 280;
 
 interface GameCardProps {
+  dimmed?: boolean;
   game: Game;
   inLibrary?: boolean;
   onDoublePress?: (game: Game) => void;
+  onLongPress?: (game: Game) => void;
   onPress?: (game: Game) => void;
+  selected?: boolean;
   subtitle?: string;
   width: number;
 }
@@ -25,8 +28,11 @@ export function GameCard({
   width,
   subtitle,
   inLibrary,
+  selected,
+  dimmed,
   onPress,
   onDoublePress,
+  onLongPress,
 }: GameCardProps) {
   const { invertColors } = useInvertColors();
   const lastTapRef = useRef(0);
@@ -67,10 +73,14 @@ export function GameCard({
   };
 
   return (
-    <HapticPressable onPress={handlePress} style={{ width }}>
+    <HapticPressable
+      onLongPress={onLongPress ? () => onLongPress(game) : undefined}
+      onPress={handlePress}
+      style={[{ width }, dimmed && styles.dimmed]}
+    >
       <View>
         <GameCover game={game} width={width} />
-        {inLibrary ? (
+        {selected || inLibrary ? (
           <View
             style={[
               styles.badge,
@@ -98,6 +108,9 @@ export function GameCard({
 }
 
 const styles = StyleSheet.create({
+  dimmed: {
+    opacity: 0.4,
+  },
   title: {
     fontSize: n(13),
     lineHeight: n(15),

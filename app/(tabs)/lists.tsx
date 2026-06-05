@@ -53,6 +53,12 @@ export default function ListsScreen() {
         {lists.map((list) => (
           <HapticPressable
             key={list.id}
+            onLongPress={() =>
+              router.push({
+                pathname: "/list/rename",
+                params: { id: list.id },
+              })
+            }
             onPress={() => openList(list.id)}
             style={styles.row}
           >

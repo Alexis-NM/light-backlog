@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
@@ -56,12 +56,14 @@ function FilterChip({
 
 export default function LibraryScreen() {
   const { t } = useLanguage();
-  const { entries } = useLibrary();
+  const { entries, setStatusMany, removeMany } = useLibrary();
   const { libraryFullscreen, setLibraryFullscreen } = useFullscreen();
   const [filters, setFilters] = usePersistedState<LibraryFilters>(
     "library_filters",
     DEFAULT_FILTERS
   );
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const sorted = useMemo(
     () => Object.values(entries).sort((a, b) => b.updatedAt - a.updatedAt),
@@ -111,6 +113,37 @@ export default function LibraryScreen() {
     return entry.rating > 0 ? `★${entry.rating}` : game.year?.toString();
   };
 
+  const toggleSelect = (game: Game) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(game.id)) {
+        next.delete(game.id);
+      } else {
+        next.add(game.id);
+      }
+      return next;
+    });
+
+  const enterSelection = (game: Game) => {
+    setSelectionMode(true);
+    toggleSelect(game);
+  };
+
+  const exitSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const applyStatus = (status: GameStatus) => {
+    setStatusMany([...selectedIds], status);
+    exitSelection();
+  };
+
+  const removeSelected = () => {
+    removeMany([...selectedIds]);
+    exitSelection();
+  };
+
   if (sorted.length === 0) {
     return (
       <ContentContainer
@@ -132,18 +165,41 @@ export default function LibraryScreen() {
   return (
     <ContentContainer
       contentWidth="wide"
-      headerTitle={t("library_title")}
+      headerTitle={
+        selectionMode
+          ? t("library_selected", { count: selectedIds.size })
+          : t("library_title")
+      }
       hideBackButton
-      rightActions={[
-        { icon: "search", onPress: () => router.push("/search") },
-        {
-          icon: libraryFullscreen ? "fullscreen-exit" : "fullscreen",
-          onPress: () => setLibraryFullscreen(!libraryFullscreen),
-        },
-      ]}
+      rightActions={
+        selectionMode
+          ? [{ icon: "close", onPress: exitSelection }]
+          : [
+              { icon: "search", onPress: () => router.push("/search") },
+              {
+                icon: libraryFullscreen ? "fullscreen-exit" : "fullscreen",
+                onPress: () => setLibraryFullscreen(!libraryFullscreen),
+              },
+            ]
+      }
     >
       <View style={[styles.wrapper, libraryFullscreen && styles.fullscreenPad]}>
-        {libraryFullscreen ? null : (
+        {selectionMode ? (
+          <View style={styles.statusRow}>
+            {GAME_STATUSES.map((status) => (
+              <HapticPressable key={status} onPress={() => applyStatus(status)}>
+                <StyledText style={styles.action}>
+                  {t(`status_${status}` as TranslationKey)}
+                </StyledText>
+              </HapticPressable>
+            ))}
+            <HapticPressable onPress={removeSelected}>
+              <StyledText style={styles.action}>{t("remove")}</StyledText>
+            </HapticPressable>
+          </View>
+        ) : null}
+
+        {selectionMode || libraryFullscreen ? null : (
           <View style={styles.statusRow}>
             {FILTERS.map((value) => (
               <FilterChip
@@ -160,7 +216,7 @@ export default function LibraryScreen() {
           </View>
         )}
 
-        {!libraryFullscreen && platforms.length > 0 ? (
+        {!(selectionMode || libraryFullscreen) && platforms.length > 0 ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -187,7 +243,14 @@ export default function LibraryScreen() {
         ) : null}
 
         {games.length > 0 ? (
-          <GameGrid games={games} getSubtitle={getSubtitle} />
+          <GameGrid
+            games={games}
+            getSubtitle={getSubtitle}
+            onLongPressGame={enterSelection}
+            onPressGame={selectionMode ? toggleSelect : undefined}
+            selectedIds={selectedIds}
+            selectionMode={selectionMode}
+          />
         ) : (
           <StyledText style={styles.emptyFilter}>
             {t("library_empty")}
@@ -217,6 +280,9 @@ const styles = StyleSheet.create({
   consoleInner: {
     flexDirection: "row",
     gap: n(14),
+  },
+  action: {
+    fontSize: n(16),
   },
   chip: {
     fontSize: n(16),

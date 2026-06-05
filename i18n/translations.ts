@@ -29,6 +29,7 @@ const en = {
   library_empty: "Your library is empty",
   library_empty_hint: "Search for games to start tracking them.",
   library_count: "{count} games",
+  library_selected: "{count} selected",
 
   // Search
   search_title: "Search",
@@ -170,6 +171,7 @@ const fr: Record<TranslationKey, string> = {
   library_empty: "Ta bibliothèque est vide",
   library_empty_hint: "Cherche des jeux pour commencer à les suivre.",
   library_count: "{count} jeux",
+  library_selected: "{count} sélectionnés",
 
   // Search
   search_title: "Recherche",

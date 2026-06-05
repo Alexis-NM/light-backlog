@@ -12,7 +12,10 @@ interface GameGridProps {
   getInLibrary?: (game: Game) => boolean;
   getSubtitle?: (game: Game) => string | undefined;
   onDoublePressGame?: (game: Game) => void;
+  onLongPressGame?: (game: Game) => void;
   onPressGame?: (game: Game) => void;
+  selectedIds?: Set<number>;
+  selectionMode?: boolean;
 }
 
 export function GameGrid({
@@ -21,6 +24,9 @@ export function GameGrid({
   getInLibrary,
   onPressGame,
   onDoublePressGame,
+  onLongPressGame,
+  selectedIds,
+  selectionMode,
 }: GameGridProps) {
   const [width, setWidth] = useState(0);
   const itemWidth = width > 0 ? (width - GAP * (COLUMNS - 1)) / COLUMNS : 0;
@@ -31,17 +37,23 @@ export function GameGrid({
       style={styles.grid}
     >
       {itemWidth > 0 &&
-        games.map((game) => (
-          <GameCard
-            game={game}
-            inLibrary={getInLibrary?.(game)}
-            key={game.id}
-            onDoublePress={onDoublePressGame}
-            onPress={onPressGame}
-            subtitle={getSubtitle?.(game)}
-            width={itemWidth}
-          />
-        ))}
+        games.map((game) => {
+          const selected = selectedIds?.has(game.id) ?? false;
+          return (
+            <GameCard
+              dimmed={Boolean(selectionMode) && !selected}
+              game={game}
+              inLibrary={getInLibrary?.(game)}
+              key={game.id}
+              onDoublePress={onDoublePressGame}
+              onLongPress={onLongPressGame}
+              onPress={onPressGame}
+              selected={selected}
+              subtitle={getSubtitle?.(game)}
+              width={itemWidth}
+            />
+          );
+        })}
     </View>
   );
 }
