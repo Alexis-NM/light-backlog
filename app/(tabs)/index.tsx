@@ -165,6 +165,22 @@ export default function LibraryScreen() {
   return (
     <ContentContainer
       contentWidth="wide"
+      footer={
+        selectionMode ? (
+          <View style={styles.footerRow}>
+            {GAME_STATUSES.map((status) => (
+              <HapticPressable key={status} onPress={() => applyStatus(status)}>
+                <StyledText style={styles.action}>
+                  {t(`status_${status}` as TranslationKey)}
+                </StyledText>
+              </HapticPressable>
+            ))}
+            <HapticPressable onPress={removeSelected}>
+              <StyledText style={styles.action}>{t("remove")}</StyledText>
+            </HapticPressable>
+          </View>
+        ) : undefined
+      }
       headerTitle={
         selectionMode
           ? t("library_selected", { count: selectedIds.size })
@@ -184,21 +200,6 @@ export default function LibraryScreen() {
       }
     >
       <View style={[styles.wrapper, libraryFullscreen && styles.fullscreenPad]}>
-        {selectionMode ? (
-          <View style={styles.statusRow}>
-            {GAME_STATUSES.map((status) => (
-              <HapticPressable key={status} onPress={() => applyStatus(status)}>
-                <StyledText style={styles.action}>
-                  {t(`status_${status}` as TranslationKey)}
-                </StyledText>
-              </HapticPressable>
-            ))}
-            <HapticPressable onPress={removeSelected}>
-              <StyledText style={styles.action}>{t("remove")}</StyledText>
-            </HapticPressable>
-          </View>
-        ) : null}
-
         {selectionMode || libraryFullscreen ? null : (
           <View style={styles.statusRow}>
             {FILTERS.map((value) => (
@@ -273,6 +274,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: n(14),
     marginBottom: n(14),
+  },
+  footerRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    columnGap: n(20),
+    rowGap: n(12),
   },
   consoleRow: {
     marginBottom: n(20),

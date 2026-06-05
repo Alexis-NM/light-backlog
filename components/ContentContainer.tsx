@@ -24,6 +24,7 @@ interface ContentContainerProps {
   children?: ReactNode;
   contentGap?: number;
   contentWidth?: "wide" | "normal";
+  footer?: ReactNode;
   headerTitle?: string;
   hideBackButton?: boolean;
   onEndReached?: () => void;
@@ -42,6 +43,7 @@ export default function ContentContainer({
   contentGap = 47,
   onEndReached,
   rightActions,
+  footer,
 }: ContentContainerProps) {
   const segments = useSegments();
   const hasNavbar = segments?.[0] === "(tabs)";
@@ -153,6 +155,21 @@ export default function ContentContainer({
             </View>
           )}
         </View>
+        {footer ? (
+          <View
+            style={[
+              styles.footer,
+              {
+                paddingBottom: hasNavbar ? n(16) : n(24),
+                borderTopColor: invertColors
+                  ? "rgba(0, 0, 0, 0.2)"
+                  : "rgba(255, 255, 255, 0.2)",
+              },
+            ]}
+          >
+            {footer}
+          </View>
+        ) : null}
       </View>
     </SwipeBackContainer>
   );
@@ -185,5 +202,11 @@ const styles = StyleSheet.create({
     width: n(5),
     position: "absolute",
     right: n(-2),
+  },
+  footer: {
+    width: "100%",
+    paddingHorizontal: n(24),
+    paddingTop: n(16),
+    borderTopWidth: n(1),
   },
 });

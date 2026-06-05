@@ -106,6 +106,22 @@ export default function ListDetailScreen() {
   return (
     <ContentContainer
       contentWidth="wide"
+      footer={
+        selectionMode ? (
+          <View style={styles.actionRow}>
+            <HapticPressable onPress={addSelectedToLibrary}>
+              <StyledText style={styles.action}>
+                {t("list_add_to_library")}
+              </StyledText>
+            </HapticPressable>
+            <HapticPressable onPress={removeSelectedFromList}>
+              <StyledText style={styles.action}>
+                {t("list_remove_from")}
+              </StyledText>
+            </HapticPressable>
+          </View>
+        ) : undefined
+      }
       headerTitle={
         selectionMode
           ? t("library_selected", { count: selectedIds.size })
@@ -127,21 +143,6 @@ export default function ListDetailScreen() {
       }
     >
       <View style={styles.body}>
-        {selectionMode ? (
-          <View style={styles.actionRow}>
-            <HapticPressable onPress={addSelectedToLibrary}>
-              <StyledText style={styles.action}>
-                {t("list_add_to_library")}
-              </StyledText>
-            </HapticPressable>
-            <HapticPressable onPress={removeSelectedFromList}>
-              <StyledText style={styles.action}>
-                {t("list_remove_from")}
-              </StyledText>
-            </HapticPressable>
-          </View>
-        ) : null}
-
         {selectionMode || listFullscreen ? null : (
           <View style={styles.section}>
             <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
@@ -182,7 +183,8 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: n(20),
   },
   action: {
