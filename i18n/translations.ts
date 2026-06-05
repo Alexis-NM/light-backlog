@@ -77,8 +77,9 @@ const en = {
   // Import
   list_import: "Import",
   import_title: "Import a list",
-  import_source_label: "Backloggd URL, raw CSV/MD link, or pasted list",
-  import_source_ph: "https://backloggd.com/u/…/list/…",
+  import_source_label: "Paste the list (CSV / Markdown / one per line)",
+  import_source_ph: "One game per line…",
+  import_pick_file: "Pick a CSV/MD file",
   import_name_label: "List name",
   import_name_ph: "Imported list",
   import_to_library: "Also add to my library",
@@ -217,8 +218,9 @@ const fr: Record<TranslationKey, string> = {
   // Import
   list_import: "Importer",
   import_title: "Importer une liste",
-  import_source_label: "URL Backloggd, lien CSV/MD brut, ou liste collée",
-  import_source_ph: "https://backloggd.com/u/…/list/…",
+  import_source_label: "Colle la liste (CSV / Markdown / un par ligne)",
+  import_source_ph: "Un jeu par ligne…",
+  import_pick_file: "Choisir un fichier CSV/MD",
   import_name_label: "Nom de la liste",
   import_name_ph: "Liste importée",
   import_to_library: "Ajouter aussi à ma bibliothèque",

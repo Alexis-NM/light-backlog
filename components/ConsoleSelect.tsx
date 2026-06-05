@@ -12,10 +12,15 @@ interface ConsoleSelectProps {
 }
 
 export function ConsoleSelect({ selected, onToggle }: ConsoleSelectProps) {
+  const ordered = [
+    ...ALL_CONSOLES.filter((name) => selected.includes(name)),
+    ...ALL_CONSOLES.filter((name) => !selected.includes(name)),
+  ];
+
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View style={styles.row}>
-        {ALL_CONSOLES.map((name) => (
+        {ordered.map((name) => (
           <HapticPressable key={name} onPress={() => onToggle(name)}>
             <StyledText
               style={[styles.chip, selected.includes(name) && styles.active]}

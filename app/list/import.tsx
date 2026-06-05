@@ -1,3 +1,5 @@
+import { getDocumentAsync } from "expo-document-picker";
+import { readAsStringAsync } from "expo-file-system/legacy";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -18,12 +20,12 @@ import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { resolveTitles } from "@/services/backloggd";
 import { searchGames } from "@/services/igdb";
+import { parseGameTitles } from "@/services/listParser";
 import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
 
-type Phase = "idle" | "fetching" | "matching" | "done" | "error";
+type Phase = "idle" | "matching" | "done" | "error";
 
 const SEARCH_DELAY_MS = 120;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -39,6 +41,12 @@ export default function ImportListScreen() {
   const [source, setSource] = useState("");
   const [consoles, setConsoles] = useState<string[]>([]);
   const [toLibrary, setToLibrary] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [message, setMessage] = useState("");
+  const [listId, setListId] = useState<string | null>(null);
+
+  const color = invertColors ? "black" : "white";
 
   const toggleConsole = (consoleName: string) =>
     setConsoles((current) =>
@@ -46,12 +54,6 @@ export default function ImportListScreen() {
         ? current.filter((c) => c !== consoleName)
         : [...current, consoleName]
     );
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
-  const [message, setMessage] = useState("");
-  const [listId, setListId] = useState<string | null>(null);
-
-  const color = invertColors ? "black" : "white";
 
   if (!auth) {
     return (
@@ -67,23 +69,32 @@ export default function ImportListScreen() {
     );
   }
 
-  const running = phase === "fetching" || phase === "matching";
+  const running = phase === "matching";
+
+  const pickFile = async () => {
+    try {
+      const result = await getDocumentAsync({
+        type: "*/*",
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.[0]) {
+        return;
+      }
+      const content = await readAsStringAsync(result.assets[0].uri);
+      setSource(content);
+      setPhase("idle");
+      setMessage("");
+    } catch {
+      setMessage(t("import_error"));
+      setPhase("error");
+    }
+  };
 
   const runImport = async () => {
     if (source.trim().length === 0 || running) {
       return;
     }
-    setPhase("fetching");
-    setMessage("");
-
-    let titles: string[];
-    try {
-      titles = await resolveTitles(source);
-    } catch {
-      setMessage(t("import_error"));
-      setPhase("error");
-      return;
-    }
+    const titles = parseGameTitles(source);
     if (titles.length === 0) {
       setMessage(t("import_empty"));
       setPhase("error");
@@ -91,6 +102,7 @@ export default function ImportListScreen() {
     }
 
     setPhase("matching");
+    setMessage("");
     setProgress({ done: 0, total: titles.length });
     const matched: Game[] = [];
     for (let i = 0; i < titles.length; i++) {
@@ -160,6 +172,8 @@ export default function ImportListScreen() {
           />
         </View>
 
+        <StyledButton onPress={pickFile} text={t("import_pick_file")} />
+
         <View style={styles.field}>
           <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
           <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
@@ -175,12 +189,10 @@ export default function ImportListScreen() {
           <View style={styles.centered}>
             <ActivityIndicator color={color} />
             <StyledText style={styles.muted}>
-              {phase === "fetching"
-                ? t("import_fetching")
-                : t("import_matching", {
-                    done: progress.done,
-                    total: progress.total,
-                  })}
+              {t("import_matching", {
+                done: progress.done,
+                total: progress.total,
+              })}
             </StyledText>
           </View>
         ) : null}

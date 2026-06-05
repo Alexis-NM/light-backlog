@@ -41,7 +41,13 @@ export default function ListsScreen() {
     <ContentContainer
       headerTitle={t("lists_title")}
       hideBackButton
-      rightAction={{ icon: "add", onPress: () => router.push("/list/new") }}
+      rightActions={[
+        {
+          icon: "file-download",
+          onPress: () => router.push("/list/import"),
+        },
+        { icon: "add", onPress: () => router.push("/list/new") },
+      ]}
     >
       <View style={styles.body}>
         {lists.map((list) => (
@@ -55,6 +61,7 @@ export default function ListsScreen() {
             </StyledText>
             <StyledText style={styles.count}>
               {t("list_count", { count: list.gameIds.length })}
+              {list.consoles?.length ? ` · ${list.consoles.join(", ")}` : ""}
             </StyledText>
           </HapticPressable>
         ))}
