@@ -9,6 +9,7 @@ import { usePersistedState } from "@/hooks/usePersistedState";
 import type { Game, GameList } from "@/types/game";
 
 interface ListsContextType {
+  addGamesToList: (listId: string, games: Game[]) => void;
   addGameToList: (listId: string, game: Game) => void;
   clearAll: () => void;
   createList: (name: string) => string;
@@ -20,6 +21,7 @@ interface ListsContextType {
   deleteList: (id: string) => void;
   getList: (id: string) => GameList | undefined;
   lists: GameList[];
+  moveList: (id: string, direction: "down" | "up") => void;
   removeGameFromList: (listId: string, gameId: number) => void;
   removeGamesFromList: (listId: string, gameIds: number[]) => void;
   renameList: (id: string, name: string) => void;
@@ -33,6 +35,8 @@ const ListsContext = createContext<ListsContextType>({
   createListWithGames: () => "",
   deleteList: () => undefined,
   addGameToList: () => undefined,
+  addGamesToList: () => undefined,
+  moveList: () => undefined,
   removeGameFromList: () => undefined,
   removeGamesFromList: () => undefined,
   renameList: () => undefined,
@@ -142,6 +146,50 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     [lists, setLists]
   );
 
+  const addGamesToList = useCallback(
+    (listId: string, games: Game[]) => {
+      setLists(
+        lists.map((list) => {
+          if (list.id !== listId) {
+            return list;
+          }
+          const gamesMap = { ...list.games };
+          const newIds: number[] = [];
+          for (const game of games) {
+            if (!gamesMap[game.id]) {
+              gamesMap[game.id] = game;
+              newIds.push(game.id);
+            }
+          }
+          return {
+            ...list,
+            gameIds: [...newIds, ...list.gameIds],
+            games: gamesMap,
+          };
+        })
+      );
+    },
+    [lists, setLists]
+  );
+
+  const moveList = useCallback(
+    (id: string, direction: "down" | "up") => {
+      const index = lists.findIndex((list) => list.id === id);
+      if (index < 0) {
+        return;
+      }
+      const target = direction === "up" ? index - 1 : index + 1;
+      if (target < 0 || target >= lists.length) {
+        return;
+      }
+      const next = [...lists];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved);
+      setLists(next);
+    },
+    [lists, setLists]
+  );
+
   const removeGameFromList = useCallback(
     (listId: string, gameId: number) => {
       setLists(
@@ -195,6 +243,8 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       createListWithGames,
       deleteList,
       addGameToList,
+      addGamesToList,
+      moveList,
       removeGameFromList,
       removeGamesFromList,
       renameList,
@@ -209,6 +259,8 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       setListConsoles,
       deleteList,
       addGameToList,
+      addGamesToList,
+      moveList,
       removeGameFromList,
       removeGamesFromList,
       renameList,

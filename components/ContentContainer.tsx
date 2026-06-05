@@ -24,12 +24,12 @@ interface ContentContainerProps {
   children?: ReactNode;
   contentGap?: number;
   contentWidth?: "wide" | "normal";
-  footer?: ReactNode;
   headerTitle?: string;
   hideBackButton?: boolean;
   onEndReached?: () => void;
   rightAction?: RightAction;
   rightActions?: RightAction[];
+  stickyTop?: ReactNode;
 }
 
 const END_REACHED_THRESHOLD = 600;
@@ -43,7 +43,7 @@ export default function ContentContainer({
   contentGap = 47,
   onEndReached,
   rightActions,
-  footer,
+  stickyTop,
 }: ContentContainerProps) {
   const segments = useSegments();
   const hasNavbar = segments?.[0] === "(tabs)";
@@ -95,6 +95,19 @@ export default function ContentContainer({
             rightActions={rightActions}
           />
         )}
+        {stickyTop ? (
+          <View
+            style={[
+              styles.stickyTop,
+              {
+                paddingLeft: contentWidth === "wide" ? n(20) : n(37),
+                paddingRight: contentWidth === "wide" ? n(32) : n(46),
+              },
+            ]}
+          >
+            {stickyTop}
+          </View>
+        ) : null}
         <View
           style={[
             styles.scrollWrapper,
@@ -155,21 +168,6 @@ export default function ContentContainer({
             </View>
           )}
         </View>
-        {footer ? (
-          <View
-            style={[
-              styles.footer,
-              {
-                paddingBottom: hasNavbar ? n(16) : n(24),
-                borderTopColor: invertColors
-                  ? "rgba(0, 0, 0, 0.2)"
-                  : "rgba(255, 255, 255, 0.2)",
-              },
-            ]}
-          >
-            {footer}
-          </View>
-        ) : null}
       </View>
     </SwipeBackContainer>
   );
@@ -203,10 +201,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: n(-2),
   },
-  footer: {
+  stickyTop: {
     width: "100%",
-    paddingHorizontal: n(24),
-    paddingTop: n(16),
-    borderTopWidth: n(1),
   },
 });

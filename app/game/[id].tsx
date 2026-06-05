@@ -27,7 +27,21 @@ export default function GameDetailScreen() {
   const { auth } = useCredentials();
   const { getEntry, setStatus, setRating, togglePlatform, removeEntry } =
     useLibrary();
-  const params = useLocalSearchParams<{ id: string; game?: string }>();
+  const params = useLocalSearchParams<{
+    id: string;
+    game?: string;
+    confirmed?: string;
+    action?: string;
+  }>();
+
+  useEffect(() => {
+    if (params.confirmed === "true" && params.action === "removeFromLibrary") {
+      removeEntry(Number(params.id));
+      if (router.canGoBack()) {
+        router.back();
+      }
+    }
+  }, [params.confirmed, params.action, params.id, removeEntry]);
 
   const parsedGame = useMemo<Game | null>(() => {
     if (!params.game) {
@@ -170,6 +184,7 @@ export default function GameDetailScreen() {
           </StyledText>
           <StarRating
             onChange={(value) => setRating(game, value)}
+            size={n(26)}
             value={rating}
           />
           <StyledText style={styles.meta}>
@@ -225,7 +240,18 @@ export default function GameDetailScreen() {
           />
           {entry ? (
             <StyledButton
-              onPress={() => removeEntry(game.id)}
+              onPress={() =>
+                router.push({
+                  pathname: "/confirm",
+                  params: {
+                    title: t("game_remove"),
+                    message: t("game_remove_confirm"),
+                    confirmText: t("remove"),
+                    action: "removeFromLibrary",
+                    returnPath: `/game/${params.id}`,
+                  },
+                })
+              }
               text={t("game_remove")}
             />
           ) : null}
@@ -288,14 +314,14 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: n(16),
+    gap: n(12),
   },
   status: {
-    fontSize: n(20),
+    fontSize: n(16),
     opacity: 0.45,
   },
   platform: {
-    fontSize: n(16),
+    fontSize: n(14),
     opacity: 0.45,
   },
   chipActive: {

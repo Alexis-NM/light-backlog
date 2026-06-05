@@ -30,6 +30,7 @@ const en = {
   library_empty_hint: "Search for games to start tracking them.",
   library_count: "{count} games",
   library_selected: "{count} selected",
+  library_remove_confirm: "Remove the selected games from your library?",
 
   // Search
   search_title: "Search",
@@ -67,6 +68,7 @@ const en = {
   list_new: "New list",
   list_name_placeholder: "List name…",
   list_delete_confirm: "Delete this list? The games stay in your library.",
+  list_remove_confirm: "Remove the selected games from this list?",
   list_empty: "This list is empty.",
   list_count: "{count} games",
   list_add_to: "Add to a list",
@@ -94,6 +96,9 @@ const en = {
   list_add_all: "Add all to library",
   list_add_to_library: "Add to library",
   list_rename: "Rename list",
+  list_options: "List options",
+  list_move_up: "Move up",
+  list_move_down: "Move down",
 
   // Settings
   settings_title: "Settings",
@@ -173,6 +178,7 @@ const fr: Record<TranslationKey, string> = {
   library_empty_hint: "Cherche des jeux pour commencer à les suivre.",
   library_count: "{count} jeux",
   library_selected: "{count} sélectionnés",
+  library_remove_confirm: "Retirer les jeux sélectionnés de ta bibliothèque ?",
 
   // Search
   search_title: "Recherche",
@@ -211,6 +217,7 @@ const fr: Record<TranslationKey, string> = {
   list_name_placeholder: "Nom de la liste…",
   list_delete_confirm:
     "Supprimer cette liste ? Les jeux restent dans ta bibliothèque.",
+  list_remove_confirm: "Retirer les jeux sélectionnés de cette liste ?",
   list_empty: "Cette liste est vide.",
   list_count: "{count} jeux",
   list_add_to: "Ajouter à une liste",
@@ -239,6 +246,9 @@ const fr: Record<TranslationKey, string> = {
   list_add_all: "Tout ajouter à la bibliothèque",
   list_add_to_library: "Ajouter à la bibliothèque",
   list_rename: "Renommer la liste",
+  list_options: "Options de la liste",
+  list_move_up: "Monter",
+  list_move_down: "Descendre",
 
   // Settings
   settings_title: "Réglages",

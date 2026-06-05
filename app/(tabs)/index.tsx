@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
@@ -64,6 +64,19 @@ export default function LibraryScreen() {
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const params = useLocalSearchParams<{
+    confirmed?: string;
+    action?: string;
+  }>();
+
+  useEffect(() => {
+    if (params.confirmed === "true" && params.action === "removeFromLibrary") {
+      removeMany([...selectedIds]);
+      setSelectionMode(false);
+      setSelectedIds(new Set());
+      router.setParams({ confirmed: undefined, action: undefined });
+    }
+  }, [params.confirmed, params.action, removeMany, selectedIds]);
 
   const sorted = useMemo(
     () => Object.values(entries).sort((a, b) => b.updatedAt - a.updatedAt),
@@ -139,10 +152,17 @@ export default function LibraryScreen() {
     exitSelection();
   };
 
-  const removeSelected = () => {
-    removeMany([...selectedIds]);
-    exitSelection();
-  };
+  const confirmRemoveSelected = () =>
+    router.push({
+      pathname: "/confirm",
+      params: {
+        title: t("remove"),
+        message: t("library_remove_confirm"),
+        confirmText: t("remove"),
+        action: "removeFromLibrary",
+        returnPath: "/(tabs)",
+      },
+    });
 
   if (sorted.length === 0) {
     return (
@@ -165,22 +185,6 @@ export default function LibraryScreen() {
   return (
     <ContentContainer
       contentWidth="wide"
-      footer={
-        selectionMode ? (
-          <View style={styles.footerRow}>
-            {GAME_STATUSES.map((status) => (
-              <HapticPressable key={status} onPress={() => applyStatus(status)}>
-                <StyledText style={styles.action}>
-                  {t(`status_${status}` as TranslationKey)}
-                </StyledText>
-              </HapticPressable>
-            ))}
-            <HapticPressable onPress={removeSelected}>
-              <StyledText style={styles.action}>{t("remove")}</StyledText>
-            </HapticPressable>
-          </View>
-        ) : undefined
-      }
       headerTitle={
         selectionMode
           ? t("library_selected", { count: selectedIds.size })
@@ -197,6 +201,22 @@ export default function LibraryScreen() {
                 onPress: () => setLibraryFullscreen(!libraryFullscreen),
               },
             ]
+      }
+      stickyTop={
+        selectionMode ? (
+          <View style={styles.selectionRow}>
+            {GAME_STATUSES.map((status) => (
+              <HapticPressable key={status} onPress={() => applyStatus(status)}>
+                <StyledText style={styles.action}>
+                  {t(`status_${status}` as TranslationKey)}
+                </StyledText>
+              </HapticPressable>
+            ))}
+            <HapticPressable onPress={confirmRemoveSelected}>
+              <StyledText style={styles.action}>{t("remove")}</StyledText>
+            </HapticPressable>
+          </View>
+        ) : undefined
       }
     >
       <View style={[styles.wrapper, libraryFullscreen && styles.fullscreenPad]}>
@@ -275,12 +295,10 @@ const styles = StyleSheet.create({
     gap: n(14),
     marginBottom: n(14),
   },
-  footerRow: {
+  selectionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "center",
-    columnGap: n(20),
-    rowGap: n(12),
+    gap: n(14),
   },
   consoleRow: {
     marginBottom: n(20),

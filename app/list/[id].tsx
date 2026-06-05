@@ -31,11 +31,26 @@ export default function ListDetailScreen() {
   const list = getList(params.id);
 
   useEffect(() => {
-    if (params.confirmed === "true" && params.action === "deleteList") {
+    if (params.confirmed !== "true") {
+      return;
+    }
+    if (params.action === "deleteList") {
       deleteList(params.id);
       router.replace("/(tabs)/lists");
+    } else if (params.action === "removeFromList") {
+      removeGamesFromList(params.id, [...selectedIds]);
+      setSelectionMode(false);
+      setSelectedIds(new Set());
+      router.setParams({ confirmed: undefined, action: undefined });
     }
-  }, [params.confirmed, params.action, params.id, deleteList]);
+  }, [
+    params.confirmed,
+    params.action,
+    params.id,
+    deleteList,
+    removeGamesFromList,
+    selectedIds,
+  ]);
 
   if (!list) {
     return <ContentContainer headerTitle=" " />;
@@ -86,10 +101,28 @@ export default function ListDetailScreen() {
     exitSelection();
   };
 
-  const removeSelectedFromList = () => {
-    removeGamesFromList(params.id, [...selectedIds]);
-    exitSelection();
+  const addSelectedToOtherList = () => {
+    const selected = games.filter((game) => selectedIds.has(game.id));
+    if (selected.length === 0) {
+      return;
+    }
+    router.push({
+      pathname: "/list/add",
+      params: { games: JSON.stringify(selected), exclude: params.id },
+    });
   };
+
+  const confirmRemoveFromList = () =>
+    router.push({
+      pathname: "/confirm",
+      params: {
+        title: t("list_remove_from"),
+        message: t("list_remove_confirm"),
+        confirmText: t("remove"),
+        action: "removeFromList",
+        returnPath: `/list/${params.id}`,
+      },
+    });
 
   const confirmDelete = () =>
     router.push({
@@ -106,22 +139,6 @@ export default function ListDetailScreen() {
   return (
     <ContentContainer
       contentWidth="wide"
-      footer={
-        selectionMode ? (
-          <View style={styles.actionRow}>
-            <HapticPressable onPress={addSelectedToLibrary}>
-              <StyledText style={styles.action}>
-                {t("list_add_to_library")}
-              </StyledText>
-            </HapticPressable>
-            <HapticPressable onPress={removeSelectedFromList}>
-              <StyledText style={styles.action}>
-                {t("list_remove_from")}
-              </StyledText>
-            </HapticPressable>
-          </View>
-        ) : undefined
-      }
       headerTitle={
         selectionMode
           ? t("library_selected", { count: selectedIds.size })
@@ -140,6 +157,25 @@ export default function ListDetailScreen() {
               },
               { icon: "delete-outline", onPress: confirmDelete },
             ]
+      }
+      stickyTop={
+        selectionMode ? (
+          <View style={styles.actionRow}>
+            <HapticPressable onPress={addSelectedToLibrary}>
+              <StyledText style={styles.action}>
+                {t("list_add_to_library")}
+              </StyledText>
+            </HapticPressable>
+            <HapticPressable onPress={addSelectedToOtherList}>
+              <StyledText style={styles.action}>{t("list_add_to")}</StyledText>
+            </HapticPressable>
+            <HapticPressable onPress={confirmRemoveFromList}>
+              <StyledText style={styles.action}>
+                {t("list_remove_from")}
+              </StyledText>
+            </HapticPressable>
+          </View>
+        ) : undefined
       }
     >
       <View style={styles.body}>
@@ -183,8 +219,7 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexWrap: "wrap",
     gap: n(20),
   },
   action: {

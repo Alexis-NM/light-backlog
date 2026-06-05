@@ -1,5 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
@@ -12,11 +12,33 @@ import { useLists } from "@/contexts/ListsContext";
 import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
 
+function parseGames(raw?: string): Game[] {
+  if (!raw) {
+    return [];
+  }
+  try {
+    return JSON.parse(raw) as Game[];
+  } catch {
+    return [];
+  }
+}
+
 export default function AddToListScreen() {
   const { t } = useLanguage();
   const { invertColors } = useInvertColors();
-  const { lists, createList, addGameToList, removeGameFromList } = useLists();
-  const params = useLocalSearchParams<{ game?: string }>();
+  const {
+    lists,
+    createList,
+    createListWithGames,
+    addGameToList,
+    addGamesToList,
+    removeGameFromList,
+  } = useLists();
+  const params = useLocalSearchParams<{
+    game?: string;
+    games?: string;
+    exclude?: string;
+  }>();
   const [name, setName] = useState("");
 
   const iconColor = invertColors ? "black" : "white";
@@ -32,21 +54,43 @@ export default function AddToListScreen() {
     }
   }, [params.game]);
 
-  if (!game) {
+  const games = useMemo(() => parseGames(params.games), [params.games]);
+  const multi = games.length > 0;
+
+  if (!(game || multi)) {
     return <ContentContainer headerTitle=" " />;
   }
+
+  const visibleLists = params.exclude
+    ? lists.filter((list) => list.id !== params.exclude)
+    : lists;
 
   const createAndAdd = () => {
     const trimmed = name.trim();
     if (trimmed.length === 0) {
       return;
     }
-    const id = createList(trimmed);
-    addGameToList(id, game);
-    setName("");
+    if (multi) {
+      createListWithGames(trimmed, games);
+      router.back();
+      return;
+    }
+    if (game) {
+      const id = createList(trimmed);
+      addGameToList(id, game);
+      setName("");
+    }
+  };
+
+  const addToList = (listId: string) => {
+    addGamesToList(listId, games);
+    router.back();
   };
 
   const toggle = (listId: string, isMember: boolean) => {
+    if (!game) {
+      return;
+    }
     if (isMember) {
       removeGameFromList(listId, game.id);
     } else {
@@ -71,16 +115,19 @@ export default function AddToListScreen() {
           value={name}
         />
 
-        {lists.length === 0 ? (
+        {visibleLists.length === 0 ? (
           <StyledText style={styles.hint}>{t("list_none")}</StyledText>
         ) : (
           <View style={styles.lists}>
-            {lists.map((list) => {
-              const isMember = list.gameIds.includes(game.id);
+            {visibleLists.map((list) => {
+              const isMember =
+                !multi && game !== null && list.gameIds.includes(game.id);
               return (
                 <HapticPressable
                   key={list.id}
-                  onPress={() => toggle(list.id, isMember)}
+                  onPress={() =>
+                    multi ? addToList(list.id) : toggle(list.id, isMember)
+                  }
                   style={styles.row}
                 >
                   <StyledText numberOfLines={1} style={styles.name}>
