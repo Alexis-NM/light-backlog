@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Backlog",
+    "slug": "backlog",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "backlog",
+    "icon": "./assets/images/icon.png",
+    "android": {
+      "backgroundColor": "#000000",
+      "package": "com.nonolpmod.backlog"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-font",
+        {
+          "fonts": ["./assets/fonts/PublicSans-Regular.ttf"]
+        }
+      ],
+      "./plugins/withAndroidConfigChanges",
+      "./plugins/withAndroidTheme"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {}
+    }
+  }
+}
