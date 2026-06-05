@@ -21,6 +21,7 @@ interface ListsContextType {
   getList: (id: string) => GameList | undefined;
   lists: GameList[];
   removeGameFromList: (listId: string, gameId: number) => void;
+  renameList: (id: string, name: string) => void;
   setListConsoles: (id: string, consoles: string[]) => void;
 }
 
@@ -32,6 +33,7 @@ const ListsContext = createContext<ListsContextType>({
   deleteList: () => undefined,
   addGameToList: () => undefined,
   removeGameFromList: () => undefined,
+  renameList: () => undefined,
   setListConsoles: () => undefined,
   clearAll: () => undefined,
 });
@@ -87,6 +89,17 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       };
       setLists([list, ...lists]);
       return id;
+    },
+    [lists, setLists]
+  );
+
+  const renameList = useCallback(
+    (id: string, name: string) => {
+      setLists(
+        lists.map((list) =>
+          list.id === id ? { ...list, name: name.trim() } : list
+        )
+      );
     },
     [lists, setLists]
   );
@@ -158,6 +171,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       deleteList,
       addGameToList,
       removeGameFromList,
+      renameList,
       setListConsoles,
       clearAll,
     }),
@@ -170,6 +184,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       deleteList,
       addGameToList,
       removeGameFromList,
+      renameList,
       clearAll,
     ]
   );
