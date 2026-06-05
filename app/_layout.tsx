@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BrowseProvider } from "@/contexts/BrowseContext";
+import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { CredentialsProvider } from "@/contexts/CredentialsContext";
 import { FullscreenProvider } from "@/contexts/FullscreenContext";
 import {
@@ -40,8 +41,10 @@ export default function App() {
                 <BrowseProvider>
                   <FullscreenProvider>
                     <SortProvider>
-                      <StatusBar hidden />
-                      <RootLayout />
+                      <ConfirmProvider>
+                        <StatusBar hidden />
+                        <RootLayout />
+                      </ConfirmProvider>
                     </SortProvider>
                   </FullscreenProvider>
                 </BrowseProvider>

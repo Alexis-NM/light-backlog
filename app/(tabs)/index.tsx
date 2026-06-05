@@ -1,11 +1,12 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { router } from "expo-router";
+import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
 import { GameGrid } from "@/components/GameGrid";
 import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
@@ -58,6 +59,7 @@ function FilterChip({
 
 export default function LibraryScreen() {
   const { t } = useLanguage();
+  const confirm = useConfirm();
   const { entries, setStatusMany, removeMany } = useLibrary();
   const { libraryFullscreen, setLibraryFullscreen } = useFullscreen();
   const { librarySort } = useSort();
@@ -67,19 +69,6 @@ export default function LibraryScreen() {
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const params = useLocalSearchParams<{
-    confirmed?: string;
-    action?: string;
-  }>();
-
-  useEffect(() => {
-    if (params.confirmed === "true" && params.action === "removeFromLibrary") {
-      removeMany([...selectedIds]);
-      setSelectionMode(false);
-      setSelectedIds(new Set());
-      router.setParams({ confirmed: undefined, action: undefined });
-    }
-  }, [params.confirmed, params.action, removeMany, selectedIds]);
 
   const sorted = useMemo(() => {
     const list = Object.values(entries);
@@ -166,17 +155,18 @@ export default function LibraryScreen() {
     exitSelection();
   };
 
-  const confirmRemoveSelected = () =>
-    router.push({
-      pathname: "/confirm",
-      params: {
-        title: t("remove"),
-        message: t("library_remove_confirm"),
-        confirmText: t("remove"),
-        action: "removeFromLibrary",
-        returnPath: "/(tabs)",
+  const confirmRemoveSelected = () => {
+    const ids = [...selectedIds];
+    confirm({
+      title: t("remove"),
+      message: t("library_remove_confirm"),
+      confirmText: t("remove"),
+      onConfirm: () => {
+        removeMany(ids);
+        exitSelection();
       },
     });
+  };
 
   if (sorted.length === 0) {
     return (

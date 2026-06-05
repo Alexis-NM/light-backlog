@@ -8,6 +8,7 @@ import { StarRating } from "@/components/StarRating";
 import { StyledButton } from "@/components/StyledButton";
 import { StyledText } from "@/components/StyledText";
 import { EXTRA_CONSOLES } from "@/constants/consoles";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -23,25 +24,12 @@ const MAX_SCREENSHOTS = 8;
 
 export default function GameDetailScreen() {
   const { t, language } = useLanguage();
+  const confirm = useConfirm();
   const { invertColors } = useInvertColors();
   const { auth } = useCredentials();
   const { getEntry, setStatus, setRating, togglePlatform, removeEntry } =
     useLibrary();
-  const params = useLocalSearchParams<{
-    id: string;
-    game?: string;
-    confirmed?: string;
-    action?: string;
-  }>();
-
-  useEffect(() => {
-    if (params.confirmed === "true" && params.action === "removeFromLibrary") {
-      removeEntry(Number(params.id));
-      if (router.canGoBack()) {
-        router.back();
-      }
-    }
-  }, [params.confirmed, params.action, params.id, removeEntry]);
+  const params = useLocalSearchParams<{ id: string; game?: string }>();
 
   const parsedGame = useMemo<Game | null>(() => {
     if (!params.game) {
@@ -241,14 +229,13 @@ export default function GameDetailScreen() {
           {entry ? (
             <StyledButton
               onPress={() =>
-                router.push({
-                  pathname: "/confirm",
-                  params: {
-                    title: t("game_remove"),
-                    message: t("game_remove_confirm"),
-                    confirmText: t("remove"),
-                    action: "removeFromLibrary",
-                    returnPath: `/game/${params.id}`,
+                confirm({
+                  title: t("game_remove"),
+                  message: t("game_remove_confirm"),
+                  confirmText: t("remove"),
+                  onConfirm: () => {
+                    removeEntry(game.id);
+                    router.back();
                   },
                 })
               }

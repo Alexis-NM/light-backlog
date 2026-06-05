@@ -1,27 +1,22 @@
-import { type Href, router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { HapticPressable } from "@/components/HapticPressable";
 import { Header } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
+import { useConfirmRequest } from "@/contexts/ConfirmContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { n } from "@/utils/scaling";
 
 export default function ConfirmScreen() {
   const { invertColors } = useInvertColors();
-  const params = useLocalSearchParams<{
-    title: string;
-    message: string;
-    confirmText: string;
-    action: string;
-    returnPath: string;
-  }>();
+  const consume = useConfirmRequest();
+  const [request] = useState(consume);
 
   const handleConfirm = () => {
-    const path = params.returnPath || "/(tabs)/settings";
-    router.navigate(
-      `${path}?confirmed=true&action=${encodeURIComponent(params.action ?? "")}` as Href
-    );
+    router.back();
+    request?.onConfirm();
   };
 
   const handleBack = () => {
@@ -40,13 +35,13 @@ export default function ConfirmScreen() {
           { backgroundColor: invertColors ? "white" : "black" },
         ]}
       >
-        <Header headerTitle={params.title || "Confirm"} />
+        <Header headerTitle={request?.title || "Confirm"} />
         <View style={styles.content}>
-          <StyledText style={styles.messageText}>{params.message}</StyledText>
+          <StyledText style={styles.messageText}>{request?.message}</StyledText>
           <View style={styles.spacer} />
           <HapticPressable onPress={handleConfirm} style={styles.button}>
             <StyledText style={[styles.buttonText, { color: textColor }]}>
-              {params.confirmText || "Confirm"}
+              {request?.confirmText || "Confirm"}
             </StyledText>
           </HapticPressable>
         </View>

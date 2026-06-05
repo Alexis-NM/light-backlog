@@ -1,8 +1,8 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
+import { router } from "expo-router";
 import ContentContainer from "@/components/ContentContainer";
 import { SelectorButton } from "@/components/SelectorButton";
 import { StyledButton } from "@/components/StyledButton";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
@@ -10,31 +10,19 @@ import { useLists } from "@/contexts/ListsContext";
 
 export default function SettingsScreen() {
   const { t } = useLanguage();
+  const confirm = useConfirm();
   const { hasCredentials } = useCredentials();
   const { clearAll: clearLibrary } = useLibrary();
   const { clearAll: clearLists } = useLists();
-  const params = useLocalSearchParams<{
-    confirmed?: string;
-    action?: string;
-  }>();
-
-  useEffect(() => {
-    if (params.confirmed === "true" && params.action === "clearLibrary") {
-      router.setParams({ confirmed: undefined, action: undefined });
-      clearLibrary();
-      clearLists();
-    }
-  }, [params.confirmed, params.action, clearLibrary, clearLists]);
 
   const confirmClear = () =>
-    router.push({
-      pathname: "/confirm",
-      params: {
-        title: t("settings_clear_library"),
-        message: t("settings_clear_library_confirm"),
-        confirmText: t("delete"),
-        action: "clearLibrary",
-        returnPath: "/(tabs)/settings",
+    confirm({
+      title: t("settings_clear_library"),
+      message: t("settings_clear_library_confirm"),
+      confirmText: t("delete"),
+      onConfirm: () => {
+        clearLibrary();
+        clearLists();
       },
     });
 

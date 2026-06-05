@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ConsoleSelect } from "@/components/ConsoleSelect";
 import ContentContainer from "@/components/ContentContainer";
 import { GameGrid } from "@/components/GameGrid";
 import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
@@ -23,42 +24,17 @@ function sortGamesByName(games: Game[], desc: boolean): Game[] {
 
 export default function ListDetailScreen() {
   const { t } = useLanguage();
+  const confirm = useConfirm();
   const { getList, deleteList, setListConsoles, removeGamesFromList } =
     useLists();
   const { addMany } = useLibrary();
   const { listFullscreen, setListFullscreen } = useFullscreen();
   const { listSort } = useSort();
-  const params = useLocalSearchParams<{
-    id: string;
-    confirmed?: string;
-    action?: string;
-  }>();
+  const params = useLocalSearchParams<{ id: string }>();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const list = getList(params.id);
-
-  useEffect(() => {
-    if (params.confirmed !== "true") {
-      return;
-    }
-    if (params.action === "deleteList") {
-      deleteList(params.id);
-      router.replace("/(tabs)/lists");
-    } else if (params.action === "removeFromList") {
-      removeGamesFromList(params.id, [...selectedIds]);
-      setSelectionMode(false);
-      setSelectedIds(new Set());
-      router.setParams({ confirmed: undefined, action: undefined });
-    }
-  }, [
-    params.confirmed,
-    params.action,
-    params.id,
-    deleteList,
-    removeGamesFromList,
-    selectedIds,
-  ]);
 
   if (!list) {
     return <ContentContainer headerTitle=" " />;
@@ -124,27 +100,27 @@ export default function ListDetailScreen() {
     });
   };
 
-  const confirmRemoveFromList = () =>
-    router.push({
-      pathname: "/confirm",
-      params: {
-        title: t("list_remove_from"),
-        message: t("list_remove_confirm"),
-        confirmText: t("remove"),
-        action: "removeFromList",
-        returnPath: `/list/${params.id}`,
+  const confirmRemoveFromList = () => {
+    const ids = [...selectedIds];
+    confirm({
+      title: t("list_remove_from"),
+      message: t("list_remove_confirm"),
+      confirmText: t("remove"),
+      onConfirm: () => {
+        removeGamesFromList(params.id, ids);
+        exitSelection();
       },
     });
+  };
 
   const confirmDelete = () =>
-    router.push({
-      pathname: "/confirm",
-      params: {
-        title: t("delete"),
-        message: t("list_delete_confirm"),
-        confirmText: t("delete"),
-        action: "deleteList",
-        returnPath: `/list/${params.id}`,
+    confirm({
+      title: t("delete"),
+      message: t("list_delete_confirm"),
+      confirmText: t("delete"),
+      onConfirm: () => {
+        deleteList(params.id);
+        router.back();
       },
     });
 
