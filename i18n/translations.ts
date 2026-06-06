@@ -107,6 +107,7 @@ const en = {
   settings_interface: "Interface",
   settings_language: "Language",
   settings_invert_colours: "Invert Colours",
+  settings_hide_artwork: "Hide Artwork",
   settings_clear_library: "Clear Library",
   settings_clear_library_confirm:
     "Delete every game and list? This cannot be undone.",
@@ -265,6 +266,7 @@ const fr: Record<TranslationKey, string> = {
   settings_interface: "Interface",
   settings_language: "Langue",
   settings_invert_colours: "Inverser les couleurs",
+  settings_hide_artwork: "Masquer les images",
   settings_clear_library: "Vider la bibliothèque",
   settings_clear_library_confirm:
     "Supprimer tous les jeux et listes ? Action irréversible.",

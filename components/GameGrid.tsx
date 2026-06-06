@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useHideArtwork } from "@/contexts/HideArtworkContext";
 import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
 import { GameCard } from "./GameCard";
@@ -29,14 +30,15 @@ export function GameGrid({
   selectionMode,
 }: GameGridProps) {
   const [width, setWidth] = useState(0);
+  const { hideArtwork } = useHideArtwork();
   const itemWidth = width > 0 ? (width - GAP * (COLUMNS - 1)) / COLUMNS : 0;
 
   return (
     <View
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
-      style={styles.grid}
+      style={hideArtwork ? styles.list : styles.grid}
     >
-      {itemWidth > 0 &&
+      {(hideArtwork ? width > 0 : itemWidth > 0) &&
         games.map((game) => {
           const selected = selectedIds?.has(game.id) ?? false;
           return (
@@ -45,12 +47,13 @@ export function GameGrid({
               game={game}
               inLibrary={getInLibrary?.(game)}
               key={game.id}
+              listMode={hideArtwork}
               onDoublePress={onDoublePressGame}
               onLongPress={onLongPressGame}
               onPress={onPressGame}
               selected={selected}
               subtitle={getSubtitle?.(game)}
-              width={itemWidth}
+              width={hideArtwork ? width : itemWidth}
             />
           );
         })}
@@ -63,6 +66,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: GAP,
+    width: "100%",
+  },
+  list: {
+    flexDirection: "column",
+    gap: n(14),
     width: "100%",
   },
 });

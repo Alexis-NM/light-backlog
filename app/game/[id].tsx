@@ -10,6 +10,7 @@ import { StyledText } from "@/components/StyledText";
 import { EXTRA_CONSOLES } from "@/constants/consoles";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useCredentials } from "@/contexts/CredentialsContext";
+import { useHideArtwork } from "@/contexts/HideArtworkContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
@@ -26,6 +27,7 @@ export default function GameDetailScreen() {
   const { t, language } = useLanguage();
   const confirm = useConfirm();
   const { invertColors } = useInvertColors();
+  const { hideArtwork } = useHideArtwork();
   const { auth } = useCredentials();
   const { getEntry, setStatus, setRating, togglePlatform, removeEntry } =
     useLibrary();
@@ -189,7 +191,7 @@ export default function GameDetailScreen() {
           </View>
         ) : null}
 
-        {details && details.screenshots.length > 0 ? (
+        {!hideArtwork && details && details.screenshots.length > 0 ? (
           <View style={styles.section}>
             <StyledText style={styles.sectionLabel}>
               {t("game_images")}
