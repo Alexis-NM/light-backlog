@@ -1,4 +1,5 @@
 import { Image, StyleSheet, View } from "react-native";
+import { useHideArtwork } from "@/contexts/HideArtworkContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
@@ -13,8 +14,13 @@ interface GameCoverProps {
 
 export function GameCover({ game, width }: GameCoverProps) {
   const { invertColors } = useInvertColors();
+  const { hideArtwork } = useHideArtwork();
   const borderColor = invertColors ? "black" : "white";
   const height = width * COVER_RATIO;
+
+  if (hideArtwork) {
+    return null;
+  }
 
   return (
     <View style={[styles.frame, { width, height, borderColor }]}>

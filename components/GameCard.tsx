@@ -15,6 +15,7 @@ interface GameCardProps {
   dimmed?: boolean;
   game: Game;
   inLibrary?: boolean;
+  listMode?: boolean;
   onDoublePress?: (game: Game) => void;
   onLongPress?: (game: Game) => void;
   onPress?: (game: Game) => void;
@@ -30,6 +31,7 @@ export function GameCard({
   inLibrary,
   selected,
   dimmed,
+  listMode,
   onPress,
   onDoublePress,
   onLongPress,
@@ -71,6 +73,31 @@ export function GameCard({
       open();
     }, DOUBLE_TAP_MS);
   };
+
+  if (listMode) {
+    return (
+      <HapticPressable
+        onLongPress={onLongPress ? () => onLongPress(game) : undefined}
+        onPress={handlePress}
+        style={[{ width }, dimmed && styles.dimmed]}
+      >
+        <StyledText
+          numberOfLines={2}
+          style={[
+            styles.listTitle,
+            (selected || inLibrary) && styles.listTitleActive,
+          ]}
+        >
+          {game.name}
+        </StyledText>
+        {subtitle ? (
+          <StyledText numberOfLines={1} style={styles.listSubtitle}>
+            {subtitle}
+          </StyledText>
+        ) : null}
+      </HapticPressable>
+    );
+  }
 
   return (
     <HapticPressable
@@ -130,5 +157,17 @@ const styles = StyleSheet.create({
     borderRadius: n(10),
     alignItems: "center",
     justifyContent: "center",
+  },
+  listTitle: {
+    fontSize: n(22),
+    lineHeight: n(26),
+  },
+  listTitleActive: {
+    textDecorationLine: "underline",
+  },
+  listSubtitle: {
+    fontSize: n(14),
+    opacity: 0.6,
+    marginTop: n(4),
   },
 });

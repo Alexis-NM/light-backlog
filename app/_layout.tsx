@@ -9,6 +9,7 @@ import {
   InvertColorsProvider,
   useInvertColors,
 } from "@/contexts/InvertColorsContext";
+import { HideArtworkProvider } from "@/contexts/HideArtworkContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import { ListsProvider } from "@/contexts/ListsContext";
@@ -34,6 +35,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <InvertColorsProvider>
+        <HideArtworkProvider>
         <LanguageProvider>
           <CredentialsProvider>
             <LibraryProvider>
@@ -52,6 +54,7 @@ export default function App() {
             </LibraryProvider>
           </CredentialsProvider>
         </LanguageProvider>
+        </HideArtworkProvider>
       </InvertColorsProvider>
     </GestureHandlerRootView>
   );
