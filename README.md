@@ -111,10 +111,11 @@ bun run generate-icon  # Generate icon from app name
 
 ## Releases (CI)
 
-`.github/workflows/build.yml` builds an APK with EAS and creates a GitHub
-release on manual dispatch (Actions tab). It requires an `EXPO_TOKEN` repo
-secret and an Expo account. Alternatively, attach a locally-built
-`app-release.apk` to a release by hand.
+`.github/workflows/build.yml` generates the Android project with
+`expo prebuild`, builds the release APK with Gradle and creates a GitHub
+release on manual dispatch (Actions tab). No Expo account or secret is
+needed. Alternatively, attach a locally-built `app-release.apk` to a release
+by hand.
 
 ## Tech stack
 

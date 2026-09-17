@@ -34,10 +34,10 @@ Delete `/android` folder before first build (regenerates with your config).
 ## GitHub Actions
 Workflow at `.github/workflows/build.yml` builds APK and creates release:
 1. Triggered manually via `workflow_dispatch`
-2. Builds production APK using EAS
+2. Generates the Android project with `expo prebuild`, then builds the release APK with Gradle
 3. Creates GitHub release with changelog
 
-Requires `EXPO_TOKEN` secret in repo settings.
+No Expo account or repo secret is needed.
 
 ## Styling with `n()`
 **Always use `n()` for sizes** - normalises across screen densities:
