@@ -1,10 +1,11 @@
-import { Image, StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
+import { StyleSheet, View } from "react-native";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
 import { StyledText } from "./StyledText";
 
-const COVER_RATIO = 4 / 3;
+export const COVER_RATIO = 4 / 3;
 
 interface GameCoverProps {
   game: Game;
@@ -20,7 +21,8 @@ export function GameCover({ game, width }: GameCoverProps) {
     <View style={[styles.frame, { width, height, borderColor }]}>
       {game.coverUrl ? (
         <Image
-          resizeMode="cover"
+          cachePolicy="memory-disk"
+          contentFit="cover"
           source={{ uri: game.coverUrl }}
           style={styles.image}
         />

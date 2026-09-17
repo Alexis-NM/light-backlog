@@ -1,9 +1,10 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
-import { GameGrid } from "@/components/GameGrid";
+import { yearOf } from "@/components/GameGrid";
+import { GameGridContainer } from "@/components/GameGridContainer";
 import { StyledText } from "@/components/StyledText";
 import { TextInput } from "@/components/TextInput";
 import { useCredentials } from "@/contexts/CredentialsContext";
@@ -25,6 +26,11 @@ export default function SearchScreen() {
   const [results, setResults] = useState<Game[]>([]);
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorText, setErrorText] = useState("");
+
+  const isInLibrary = useCallback(
+    (game: Game) => Boolean(getEntry(game.id)),
+    [getEntry]
+  );
 
   if (!auth) {
     return (
@@ -64,55 +70,57 @@ export default function SearchScreen() {
     }
   };
 
-  return (
-    <ContentContainer
-      contentWidth="wide"
-      headerTitle={t("search_title")}
-      rightAction={{
-        icon: "search",
-        onPress: runSearch,
-        show: query.length > 0,
-      }}
-    >
-      <View style={styles.body}>
-        <TextInput
-          autoFocus
-          onChangeText={setQuery}
-          onSubmit={runSearch}
-          placeholder={t("search_placeholder")}
-          value={query}
-        />
-
-        {phase === "loading" ? (
+  const status = (() => {
+    switch (phase) {
+      case "loading":
+        return (
           <View style={styles.centered}>
             <ActivityIndicator color={invertColors ? "black" : "white"} />
             <StyledText style={styles.muted}>
               {t("search_searching")}
             </StyledText>
           </View>
-        ) : null}
-
-        {phase === "error" ? (
-          <StyledText style={styles.error}>{errorText}</StyledText>
-        ) : null}
-
-        {phase === "done" && results.length === 0 ? (
-          <StyledText style={styles.muted}>{t("search_no_results")}</StyledText>
-        ) : null}
-
-        {phase === "idle" ? (
+        );
+      case "error":
+        return <StyledText style={styles.error}>{errorText}</StyledText>;
+      case "idle":
+        return (
           <StyledText style={styles.muted}>{t("search_empty")}</StyledText>
-        ) : null}
+        );
+      default:
+        return null;
+    }
+  })();
 
-        {results.length > 0 ? (
-          <GameGrid
-            games={results}
-            getInLibrary={(game) => Boolean(getEntry(game.id))}
-            getSubtitle={(game) => game.year?.toString()}
+  return (
+    <GameGridContainer
+      empty={
+        phase === "done" ? (
+          <StyledText style={styles.muted}>{t("search_no_results")}</StyledText>
+        ) : undefined
+      }
+      games={results}
+      getInLibrary={isInLibrary}
+      getSubtitle={yearOf}
+      header={
+        <View style={styles.body}>
+          <TextInput
+            autoFocus
+            onChangeText={setQuery}
+            onSubmit={runSearch}
+            placeholder={t("search_placeholder")}
+            value={query}
           />
-        ) : null}
-      </View>
-    </ContentContainer>
+          {status}
+        </View>
+      }
+      headerTitle={t("search_title")}
+      rightAction={{
+        icon: "search",
+        onPress: runSearch,
+        show: query.length > 0,
+      }}
+    />
   );
 }
 
@@ -120,6 +128,7 @@ const styles = StyleSheet.create({
   body: {
     width: "100%",
     gap: n(24),
+    marginBottom: n(24),
   },
   centered: {
     alignItems: "center",

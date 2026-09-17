@@ -1,57 +1,61 @@
-import { useMemo, useRef, useState } from "react";
-import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
-import { Animated } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Animated, type LayoutChangeEvent } from "react-native";
 import { n } from "@/utils/scaling";
 
-interface UseScrollIndicatorReturn {
-  contentHeight: number;
-  handleScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
-  scrollIndicatorHeight: number;
-  scrollIndicatorPosition:
-    | Animated.Value
-    | Animated.AnimatedInterpolation<number>;
-  scrollViewHeight: number;
-  setContentHeight: (height: number) => void;
-  setScrollViewHeight: (height: number) => void;
+const MIN_THUMB_HEIGHT = n(20);
+
+export interface ScrollIndicator {
+  height: number;
+  position: Animated.Value | Animated.AnimatedInterpolation<number>;
 }
 
-export function useScrollIndicator(): UseScrollIndicatorReturn {
-  const [contentHeight, setContentHeight] = useState<number>(0);
-  const [scrollViewHeight, setScrollViewHeight] = useState<number>(0);
+/**
+ * Drives the custom scroll indicator from a scroll view's native scroll events.
+ * Wire `onScroll`, `onLayout` and `onContentSizeChange` to an `Animated.ScrollView`
+ * or `Animated.FlatList`; the thumb position never touches the JS thread.
+ */
+export function useScrollIndicator() {
+  const [contentHeight, setContentHeight] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const fallbackScrollValue = useRef(new Animated.Value(0)).current;
 
-  const scrollIndicatorHeight =
-    scrollViewHeight > 0 &&
-    contentHeight > 0 &&
-    contentHeight > scrollViewHeight
-      ? Math.max((scrollViewHeight * scrollViewHeight) / contentHeight, n(20))
-      : 0;
-
-  const scrollIndicatorPosition =
-    contentHeight > scrollViewHeight && scrollIndicatorHeight > 0
-      ? scrollY.interpolate({
-          inputRange: [0, contentHeight - scrollViewHeight],
-          outputRange: [0, scrollViewHeight - scrollIndicatorHeight],
-          extrapolate: "clamp",
-        })
-      : fallbackScrollValue;
-
-  const handleScroll = useMemo(
+  const onScroll = useMemo(
     () =>
       Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
     [scrollY]
   );
 
-  return {
-    contentHeight,
-    handleScroll,
-    scrollIndicatorHeight,
-    scrollIndicatorPosition,
-    scrollViewHeight,
-    setContentHeight,
-    setScrollViewHeight,
-  };
+  const onLayout = useCallback(
+    (event: LayoutChangeEvent) =>
+      setViewportHeight(event.nativeEvent.layout.height),
+    []
+  );
+
+  const onContentSizeChange = useCallback(
+    (_width: number, height: number) => setContentHeight(height),
+    []
+  );
+
+  const indicator = useMemo<ScrollIndicator>(() => {
+    const overflow = contentHeight - viewportHeight;
+    if (viewportHeight <= 0 || overflow <= 0) {
+      return { height: 0, position: scrollY };
+    }
+    const height = Math.max(
+      (viewportHeight * viewportHeight) / contentHeight,
+      MIN_THUMB_HEIGHT
+    );
+    return {
+      height,
+      position: scrollY.interpolate({
+        inputRange: [0, overflow],
+        outputRange: [0, viewportHeight - height],
+        extrapolate: "clamp",
+      }),
+    };
+  }, [contentHeight, viewportHeight, scrollY]);
+
+  return { indicator, onContentSizeChange, onLayout, onScroll };
 }

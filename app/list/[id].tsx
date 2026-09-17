@@ -1,9 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ConsoleSelect } from "@/components/ConsoleSelect";
 import ContentContainer from "@/components/ContentContainer";
-import { GameGrid } from "@/components/GameGrid";
+import { yearOf } from "@/components/GameGrid";
+import { GameGridContainer } from "@/components/GameGridContainer";
 import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -11,14 +12,23 @@ import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { useSort } from "@/contexts/SortContext";
-import type { Game } from "@/types/game";
+import { type SortMode, useSort } from "@/contexts/SortContext";
+import type { Game, GameList } from "@/types/game";
+import { compareNames } from "@/utils/compareNames";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 
-function sortGamesByName(games: Game[], desc: boolean): Game[] {
-  return [...games].sort((a, b) =>
-    desc ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
+function orderedGames(list: GameList, sort: SortMode) {
+  const games = list.gameIds
+    .map((gameId) => list.games[gameId])
+    .filter((game): game is Game => game !== undefined);
+  if (sort === "recent") {
+    return games;
+  }
+  return games.sort((a, b) =>
+    sort === "alpha_desc"
+      ? compareNames(b.name, a.name)
+      : compareNames(a.name, b.name)
   );
 }
 
@@ -36,17 +46,37 @@ export default function ListDetailScreen() {
 
   const list = getList(params.id);
 
+  const games = useMemo(
+    () => (list ? orderedGames(list, listSort) : []),
+    [list, listSort]
+  );
+
+  const toggleSelect = useCallback(
+    (game: Game) =>
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(game.id)) {
+          next.delete(game.id);
+        } else {
+          next.add(game.id);
+        }
+        return next;
+      }),
+    []
+  );
+
+  const enterSelection = useCallback(
+    (game: Game) => {
+      setSelectionMode(true);
+      toggleSelect(game);
+    },
+    [toggleSelect]
+  );
+
   if (!list) {
     return <ContentContainer headerTitle=" " />;
   }
 
-  const orderedGames = list.gameIds
-    .map((gameId) => list.games[gameId])
-    .filter((game) => game !== undefined);
-  const games =
-    listSort === "recent"
-      ? orderedGames
-      : sortGamesByName(orderedGames, listSort === "alpha_desc");
   const consoles = list.consoles ?? [];
 
   const toggleConsole = (name: string) =>
@@ -56,22 +86,6 @@ export default function ListDetailScreen() {
         ? consoles.filter((c) => c !== name)
         : [...consoles, name]
     );
-
-  const toggleSelect = (game: Game) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(game.id)) {
-        next.delete(game.id);
-      } else {
-        next.add(game.id);
-      }
-      return next;
-    });
-
-  const enterSelection = (game: Game) => {
-    setSelectionMode(true);
-    toggleSelect(game);
-  };
 
   const exitSelection = () => {
     setSelectionMode(false);
@@ -125,13 +139,25 @@ export default function ListDetailScreen() {
     });
 
   return (
-    <ContentContainer
-      contentWidth="wide"
+    <GameGridContainer
+      empty={<StyledText style={styles.muted}>{t("list_empty")}</StyledText>}
+      games={games}
+      getSubtitle={yearOf}
+      header={
+        selectionMode || listFullscreen ? undefined : (
+          <View style={styles.section}>
+            <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
+            <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
+          </View>
+        )
+      }
       headerTitle={
         selectionMode
           ? t("library_selected", { count: selectedIds.size })
           : list.name
       }
+      onLongPressGame={enterSelection}
+      onPressGame={selectionMode ? toggleSelect : undefined}
       rightActions={
         selectionMode
           ? [
@@ -146,6 +172,8 @@ export default function ListDetailScreen() {
               { icon: "delete-outline", onPress: confirmDelete },
             ]
       }
+      selectedIds={selectedIds}
+      selectionMode={selectionMode}
       stickyTop={
         selectionMode ? (
           <View style={styles.actionRow}>
@@ -165,39 +193,14 @@ export default function ListDetailScreen() {
           </View>
         ) : undefined
       }
-    >
-      <View style={styles.body}>
-        {selectionMode || listFullscreen ? null : (
-          <View style={styles.section}>
-            <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
-            <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
-          </View>
-        )}
-
-        {games.length > 0 ? (
-          <GameGrid
-            games={games}
-            getSubtitle={(game) => game.year?.toString()}
-            onLongPressGame={enterSelection}
-            onPressGame={selectionMode ? toggleSelect : undefined}
-            selectedIds={selectedIds}
-            selectionMode={selectionMode}
-          />
-        ) : (
-          <StyledText style={styles.muted}>{t("list_empty")}</StyledText>
-        )}
-      </View>
-    </ContentContainer>
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  body: {
-    width: "100%",
-    gap: n(24),
-  },
   section: {
     gap: n(12),
+    marginBottom: n(24),
   },
   label: {
     fontSize: n(13),

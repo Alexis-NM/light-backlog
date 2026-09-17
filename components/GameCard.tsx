@@ -1,15 +1,23 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import type { Game } from "@/types/game";
 import { openGame } from "@/utils/navigation";
 import { n } from "@/utils/scaling";
-import { GameCover } from "./GameCover";
+import { COVER_RATIO, GameCover } from "./GameCover";
 import { HapticPressable } from "./HapticPressable";
 import { StyledText } from "./StyledText";
 
 const DOUBLE_TAP_MS = 280;
+
+const CAPTION_MARGIN = n(6);
+const CAPTION_HEIGHT = n(44);
+
+/** Card height is fixed for a given width so grids can lay rows out without measuring. */
+export function cardHeight(width: number) {
+  return width * COVER_RATIO + CAPTION_MARGIN + CAPTION_HEIGHT;
+}
 
 interface GameCardProps {
   dimmed?: boolean;
@@ -23,7 +31,7 @@ interface GameCardProps {
   width: number;
 }
 
-export function GameCard({
+function GameCardComponent({
   game,
   width,
   subtitle,
@@ -95,29 +103,37 @@ export function GameCard({
           </View>
         ) : null}
       </View>
-      <StyledText numberOfLines={2} style={styles.title}>
-        {game.name}
-      </StyledText>
-      {subtitle ? (
-        <StyledText numberOfLines={1} style={styles.subtitle}>
-          {subtitle}
+      <View style={styles.caption}>
+        <StyledText numberOfLines={2} style={styles.title}>
+          {game.name}
         </StyledText>
-      ) : null}
+        {subtitle ? (
+          <StyledText numberOfLines={1} style={styles.subtitle}>
+            {subtitle}
+          </StyledText>
+        ) : null}
+      </View>
     </HapticPressable>
   );
 }
+
+export const GameCard = memo(GameCardComponent);
 
 const styles = StyleSheet.create({
   dimmed: {
     opacity: 0.4,
   },
+  caption: {
+    height: CAPTION_HEIGHT,
+    marginTop: CAPTION_MARGIN,
+  },
   title: {
     fontSize: n(13),
     lineHeight: n(15),
-    marginTop: n(6),
   },
   subtitle: {
     fontSize: n(11),
+    lineHeight: n(13),
     opacity: 0.6,
     marginTop: n(1),
   },

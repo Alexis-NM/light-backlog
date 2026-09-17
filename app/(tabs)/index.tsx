@@ -1,9 +1,9 @@
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
-import { GameGrid } from "@/components/GameGrid";
+import { GameGridContainer } from "@/components/GameGridContainer";
 import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -20,6 +20,7 @@ import {
   type GameStatus,
   type LibraryEntry,
 } from "@/types/game";
+import { compareNames } from "@/utils/compareNames";
 import { n } from "@/utils/scaling";
 
 type Filter = "all" | GameStatus;
@@ -31,6 +32,9 @@ interface LibraryFilters {
 }
 
 const DEFAULT_FILTERS: LibraryFilters = { status: "all", platform: null };
+
+const byName = (a: LibraryEntry, b: LibraryEntry) =>
+  compareNames(a.game.name, b.game.name);
 
 function FilterChip({
   label,
@@ -72,8 +76,6 @@ export default function LibraryScreen() {
 
   const sorted = useMemo(() => {
     const list = Object.values(entries);
-    const byName = (a: LibraryEntry, b: LibraryEntry) =>
-      a.game.name.localeCompare(b.game.name);
     switch (librarySort) {
       case "alpha_desc":
         return list.sort((a, b) => byName(b, a));
@@ -93,7 +95,7 @@ export default function LibraryScreen() {
         set.add(platform);
       }
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+    return Array.from(set).sort(compareNames);
   }, [sorted]);
 
   const activePlatform =
@@ -115,35 +117,44 @@ export default function LibraryScreen() {
     [sorted, filters.status, activePlatform]
   );
 
-  const getSubtitle = (game: Game) => {
-    const entry = entries[game.id];
-    if (!entry) {
-      return;
-    }
-    if (filters.status === "all") {
-      const statusLabel = t(`status_${entry.status}` as TranslationKey);
-      return entry.rating > 0
-        ? `★${entry.rating} · ${statusLabel}`
-        : statusLabel;
-    }
-    return entry.rating > 0 ? `★${entry.rating}` : game.year?.toString();
-  };
-
-  const toggleSelect = (game: Game) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(game.id)) {
-        next.delete(game.id);
-      } else {
-        next.add(game.id);
+  const getSubtitle = useCallback(
+    (game: Game) => {
+      const entry = entries[game.id];
+      if (!entry) {
+        return;
       }
-      return next;
-    });
+      if (filters.status === "all") {
+        const statusLabel = t(`status_${entry.status}` as TranslationKey);
+        return entry.rating > 0
+          ? `★${entry.rating} · ${statusLabel}`
+          : statusLabel;
+      }
+      return entry.rating > 0 ? `★${entry.rating}` : game.year?.toString();
+    },
+    [entries, filters.status, t]
+  );
 
-  const enterSelection = (game: Game) => {
-    setSelectionMode(true);
-    toggleSelect(game);
-  };
+  const toggleSelect = useCallback(
+    (game: Game) =>
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(game.id)) {
+          next.delete(game.id);
+        } else {
+          next.add(game.id);
+        }
+        return next;
+      }),
+    []
+  );
+
+  const enterSelection = useCallback(
+    (game: Game) => {
+      setSelectionMode(true);
+      toggleSelect(game);
+    },
+    [toggleSelect]
+  );
 
   const exitSelection = () => {
     setSelectionMode(false);
@@ -186,15 +197,68 @@ export default function LibraryScreen() {
     );
   }
 
+  const showFilters = !(selectionMode || libraryFullscreen);
+
   return (
-    <ContentContainer
-      contentWidth="wide"
+    <GameGridContainer
+      empty={
+        <StyledText style={styles.emptyFilter}>{t("library_empty")}</StyledText>
+      }
+      games={games}
+      getSubtitle={getSubtitle}
+      header={
+        showFilters ? (
+          <View>
+            <View style={styles.statusRow}>
+              {FILTERS.map((value) => (
+                <FilterChip
+                  active={value === filters.status}
+                  key={value}
+                  label={
+                    value === "all"
+                      ? t("filter_all")
+                      : t(`status_${value}` as TranslationKey)
+                  }
+                  onPress={() => setFilters({ ...filters, status: value })}
+                />
+              ))}
+            </View>
+            {platforms.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.consoleRow}
+              >
+                <View style={styles.consoleInner}>
+                  <FilterChip
+                    active={activePlatform === null}
+                    label={t("filter_all")}
+                    onPress={() => setFilters({ ...filters, platform: null })}
+                    small
+                  />
+                  {platforms.map((platform) => (
+                    <FilterChip
+                      active={activePlatform === platform}
+                      key={platform}
+                      label={platform}
+                      onPress={() => setFilters({ ...filters, platform })}
+                      small
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+            ) : null}
+          </View>
+        ) : undefined
+      }
       headerTitle={
         selectionMode
           ? t("library_selected", { count: selectedIds.size })
           : t("library_title")
       }
       hideBackButton
+      onLongPressGame={enterSelection}
+      onPressGame={selectionMode ? toggleSelect : undefined}
       rightActions={
         selectionMode
           ? [{ icon: "close", onPress: exitSelection }]
@@ -206,6 +270,8 @@ export default function LibraryScreen() {
               },
             ]
       }
+      selectedIds={selectedIds}
+      selectionMode={selectionMode}
       stickyTop={
         selectionMode ? (
           <View style={styles.selectionRow}>
@@ -222,77 +288,11 @@ export default function LibraryScreen() {
           </View>
         ) : undefined
       }
-    >
-      <View style={[styles.wrapper, libraryFullscreen && styles.fullscreenPad]}>
-        {selectionMode || libraryFullscreen ? null : (
-          <View style={styles.statusRow}>
-            {FILTERS.map((value) => (
-              <FilterChip
-                active={value === filters.status}
-                key={value}
-                label={
-                  value === "all"
-                    ? t("filter_all")
-                    : t(`status_${value}` as TranslationKey)
-                }
-                onPress={() => setFilters({ ...filters, status: value })}
-              />
-            ))}
-          </View>
-        )}
-
-        {!(selectionMode || libraryFullscreen) && platforms.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.consoleRow}
-          >
-            <View style={styles.consoleInner}>
-              <FilterChip
-                active={activePlatform === null}
-                label={t("filter_all")}
-                onPress={() => setFilters({ ...filters, platform: null })}
-                small
-              />
-              {platforms.map((platform) => (
-                <FilterChip
-                  active={activePlatform === platform}
-                  key={platform}
-                  label={platform}
-                  onPress={() => setFilters({ ...filters, platform })}
-                  small
-                />
-              ))}
-            </View>
-          </ScrollView>
-        ) : null}
-
-        {games.length > 0 ? (
-          <GameGrid
-            games={games}
-            getSubtitle={getSubtitle}
-            onLongPressGame={enterSelection}
-            onPressGame={selectionMode ? toggleSelect : undefined}
-            selectedIds={selectedIds}
-            selectionMode={selectionMode}
-          />
-        ) : (
-          <StyledText style={styles.emptyFilter}>
-            {t("library_empty")}
-          </StyledText>
-        )}
-      </View>
-    </ContentContainer>
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    width: "100%",
-  },
-  fullscreenPad: {
-    paddingBottom: n(24),
-  },
   statusRow: {
     flexDirection: "row",
     flexWrap: "wrap",

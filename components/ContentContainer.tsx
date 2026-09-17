@@ -1,207 +1,55 @@
-import type { MaterialIcons } from "@expo/vector-icons";
-import { router, useSegments } from "expo-router";
 import type { ReactNode } from "react";
+import { Animated, StyleSheet, View } from "react-native";
 import {
-  Animated,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  StyleSheet,
-  View,
-} from "react-native";
-import { Header } from "@/components/Header";
-import { SwipeBackContainer } from "@/components/SwipeBackContainer";
-import { useInvertColors } from "@/contexts/InvertColorsContext";
+  horizontalPadding,
+  ScreenFrame,
+  type ScreenFrameProps,
+} from "@/components/ScreenFrame";
 import { useScrollIndicator } from "@/hooks/useScrollIndicator";
 import { n } from "@/utils/scaling";
 
-interface RightAction {
-  icon: keyof typeof MaterialIcons.glyphMap;
-  onPress: () => void;
-  show?: boolean;
-}
-
-interface ContentContainerProps {
+interface ContentContainerProps
+  extends Omit<ScreenFrameProps, "children" | "indicator"> {
   children?: ReactNode;
   contentGap?: number;
-  contentWidth?: "wide" | "normal";
-  headerTitle?: string;
-  hideBackButton?: boolean;
-  onEndReached?: () => void;
-  rightAction?: RightAction;
-  rightActions?: RightAction[];
-  stickyTop?: ReactNode;
 }
 
-const END_REACHED_THRESHOLD = 600;
-
 export default function ContentContainer({
-  headerTitle,
   children,
-  hideBackButton = false,
-  rightAction,
-  contentWidth = "normal",
   contentGap = 47,
-  onEndReached,
-  rightActions,
-  stickyTop,
+  contentWidth = "normal",
+  ...frame
 }: ContentContainerProps) {
-  const segments = useSegments();
-  const hasNavbar = segments?.[0] === "(tabs)";
-  const { invertColors } = useInvertColors();
-  const {
-    handleScroll,
-    scrollIndicatorHeight,
-    scrollIndicatorPosition,
-    setContentHeight,
-    setScrollViewHeight,
-  } = useScrollIndicator();
-
-  const canSwipeBack = Boolean(headerTitle) && !hideBackButton;
-
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    }
-  };
-
-  const handleScrollEvent = (
-    event: NativeSyntheticEvent<NativeScrollEvent>
-  ) => {
-    handleScroll(event);
-    if (!onEndReached) {
-      return;
-    }
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const distanceFromBottom =
-      contentSize.height - contentOffset.y - layoutMeasurement.height;
-    if (distanceFromBottom < n(END_REACHED_THRESHOLD)) {
-      onEndReached();
-    }
-  };
+  const { indicator, onContentSizeChange, onLayout, onScroll } =
+    useScrollIndicator();
 
   return (
-    <SwipeBackContainer enabled={canSwipeBack} onSwipeBack={handleBack}>
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: invertColors ? "white" : "black" },
-        ]}
+    <ScreenFrame {...frame} contentWidth={contentWidth} indicator={indicator}>
+      <Animated.ScrollView
+        onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
+        onScroll={onScroll}
+        overScrollMode="never"
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
       >
-        {headerTitle && (
-          <Header
-            headerTitle={headerTitle}
-            hideBackButton={hideBackButton}
-            rightAction={rightAction}
-            rightActions={rightActions}
-          />
-        )}
-        {stickyTop ? (
-          <View
-            style={[
-              styles.stickyTop,
-              {
-                paddingLeft: contentWidth === "wide" ? n(20) : n(37),
-                paddingRight: contentWidth === "wide" ? n(32) : n(46),
-              },
-            ]}
-          >
-            {stickyTop}
-          </View>
-        ) : null}
         <View
           style={[
-            styles.scrollWrapper,
-            { paddingBottom: hasNavbar ? undefined : n(20) },
+            styles.content,
+            horizontalPadding(contentWidth),
+            { gap: n(contentGap) },
           ]}
         >
-          <Animated.ScrollView
-            onLayout={(event) =>
-              setScrollViewHeight(event.nativeEvent.layout.height)
-            }
-            onScroll={handleScrollEvent}
-            overScrollMode="never"
-            scrollEventThrottle={16}
-            showsVerticalScrollIndicator={false}
-          >
-            <View
-              onLayout={(event) =>
-                setContentHeight(event.nativeEvent.layout.height)
-              }
-              style={[
-                styles.content,
-                {
-                  gap: n(contentGap),
-                  paddingLeft: contentWidth === "wide" ? n(20) : n(37),
-                  paddingRight: contentWidth === "wide" ? n(32) : n(46),
-                },
-              ]}
-            >
-              {children ?? null}
-            </View>
-          </Animated.ScrollView>
-          {scrollIndicatorHeight > 0 && (
-            <View
-              style={[
-                styles.scrollIndicatorTrack,
-                {
-                  right: n(18),
-                  backgroundColor: invertColors ? "black" : "white",
-                },
-              ]}
-            >
-              <Animated.View
-                style={[
-                  styles.scrollIndicatorThumb,
-                  {
-                    backgroundColor: invertColors ? "black" : "white",
-                  },
-                  {
-                    height: scrollIndicatorHeight,
-                    transform: [
-                      {
-                        translateY: scrollIndicatorPosition,
-                      },
-                    ],
-                  },
-                ]}
-              />
-            </View>
-          )}
+          {children ?? null}
         </View>
-      </View>
-    </SwipeBackContainer>
+      </Animated.ScrollView>
+    </ScreenFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: "100%",
-    gap: n(14),
-  },
-  scrollWrapper: {
-    flex: 1,
-    flexDirection: "row",
-    width: "100%",
-    position: "relative",
-  },
   content: {
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    paddingHorizontal: n(37),
-    gap: n(47),
-  },
-  scrollIndicatorTrack: {
-    width: n(1),
-    height: "100%",
-    position: "absolute",
-  },
-  scrollIndicatorThumb: {
-    width: n(5),
-    position: "absolute",
-    right: n(-2),
-  },
-  stickyTop: {
-    width: "100%",
   },
 });

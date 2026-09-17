@@ -73,6 +73,8 @@ Props:
 - `contentWidth` - `"normal"` (default) or `"wide"` for more horizontal space
 - `contentGap` - Gap between children (default: 47)
 
+For screens whose content is a grid of games, use `GameGridContainer` instead: same header/sticky/indicator chrome, but the grid is a virtualised `FlatList` (only rows near the viewport are mounted). Anything above the grid goes in `header`; `empty` and `footer` cover the empty and loading states.
+
 ## Tabs
 To add a new tab:
 

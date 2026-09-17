@@ -1,8 +1,10 @@
 import { router } from "expo-router";
+import { useCallback } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
-import { GameGrid } from "@/components/GameGrid";
+import { yearOf } from "@/components/GameGrid";
+import { GameGridContainer } from "@/components/GameGridContainer";
 import { HapticPressable } from "@/components/HapticPressable";
 import type { RightAction } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
@@ -31,6 +33,30 @@ export default function GamesScreen() {
   );
 
   const spinnerColor = invertColors ? "black" : "white";
+  const consoleId = selectedConsole?.id;
+  const consoleName = selectedConsole?.name;
+
+  const isInLibrary = useCallback(
+    (game: Game) => Boolean(getEntry(game.id)),
+    [getEntry]
+  );
+
+  const quickToggle = useCallback(
+    (game: Game) => {
+      if (getEntry(game.id)) {
+        removeEntry(game.id);
+        triggerHaptic();
+        return;
+      }
+      const platformName =
+        game.platforms?.find((p) => p.id === consoleId)?.name ?? consoleName;
+      if (platformName) {
+        addPlatform(game, platformName);
+        triggerSuccess();
+      }
+    },
+    [addPlatform, consoleId, consoleName, getEntry, removeEntry]
+  );
 
   if (!auth) {
     return (
@@ -87,59 +113,45 @@ export default function GamesScreen() {
     );
   }
 
-  const platformNameFor = (game: Game) =>
-    game.platforms?.find((p) => p.id === selectedConsole.id)?.name ??
-    selectedConsole.name;
-
-  const quickToggle = (game: Game) => {
-    if (getEntry(game.id)) {
-      removeEntry(game.id);
-      triggerHaptic();
-      return;
+  const status = (() => {
+    if (phase === "loading") {
+      return (
+        <View style={styles.centered}>
+          <ActivityIndicator color={spinnerColor} />
+        </View>
+      );
     }
-    addPlatform(game, platformNameFor(game));
-    triggerSuccess();
-  };
+    if (phase === "error") {
+      return <StyledText style={styles.muted}>{errorText}</StyledText>;
+    }
+    return;
+  })();
 
   return (
-    <ContentContainer
-      contentWidth="wide"
+    <GameGridContainer
+      empty={
+        phase === "done" ? (
+          <StyledText style={styles.muted}>{t("search_no_results")}</StyledText>
+        ) : undefined
+      }
+      footer={
+        loadingMore ? (
+          <ActivityIndicator color={spinnerColor} style={styles.more} />
+        ) : undefined
+      }
+      games={games}
+      getInLibrary={isInLibrary}
+      getSubtitle={yearOf}
+      header={status}
       headerTitle={selectedConsole.name}
       hideBackButton
+      onDoublePressGame={quickToggle}
       onEndReached={loadMore}
       rightActions={[
         { icon: "apps", onPress: () => setSelectedConsole(null) },
         fullscreenAction,
       ]}
-    >
-      {phase === "loading" ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={spinnerColor} />
-        </View>
-      ) : null}
-
-      {phase === "error" ? (
-        <StyledText style={styles.muted}>{errorText}</StyledText>
-      ) : null}
-
-      {phase === "done" && games.length === 0 ? (
-        <StyledText style={styles.muted}>{t("search_no_results")}</StyledText>
-      ) : null}
-
-      {games.length > 0 ? (
-        <View style={styles.list}>
-          <GameGrid
-            games={games}
-            getInLibrary={(game) => Boolean(getEntry(game.id))}
-            getSubtitle={(game) => game.year?.toString()}
-            onDoublePressGame={quickToggle}
-          />
-          {loadingMore ? (
-            <ActivityIndicator color={spinnerColor} style={styles.more} />
-          ) : null}
-        </View>
-      ) : null}
-    </ContentContainer>
+    />
   );
 }
 
@@ -174,11 +186,6 @@ const styles = StyleSheet.create({
   muted: {
     fontSize: n(15),
     opacity: 0.6,
-  },
-  list: {
-    width: "100%",
-    gap: n(20),
-    paddingBottom: n(24),
   },
   more: {
     paddingVertical: n(10),
