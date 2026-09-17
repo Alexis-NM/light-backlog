@@ -114,6 +114,24 @@ const en = {
   settings_creds_not_set: "Not set",
   settings_sort_library: "Library sort",
   settings_sort_lists: "List sort",
+  settings_backup: "Backup",
+
+  // Backup
+  backup_title: "Backup",
+  backup_intro:
+    "Save your library, lists and settings to a single file, or restore them from a previous backup.",
+  backup_include_credentials: "Include IGDB credentials",
+  backup_export: "Export a backup",
+  backup_import: "Restore a backup",
+  backup_export_done: "Saved as {name}.",
+  backup_export_error: "Could not save the backup.",
+  backup_read_error: "Could not read the file.",
+  backup_invalid: "This file is not a Backlog backup.",
+  backup_restore_confirm:
+    "Replace everything with this backup ({games} games, {lists} lists)? Current data will be lost.",
+  backup_restore: "Restore",
+  backup_restore_done: "Backup restored.",
+  backup_restore_error: "Could not restore the backup.",
 
   // Sorting
   sort_alpha: "A-Z",
@@ -272,6 +290,24 @@ const fr: Record<TranslationKey, string> = {
   settings_creds_not_set: "Non définis",
   settings_sort_library: "Tri biblio",
   settings_sort_lists: "Tri listes",
+  settings_backup: "Sauvegarde",
+
+  // Backup
+  backup_title: "Sauvegarde",
+  backup_intro:
+    "Enregistre ta bibliothèque, tes listes et tes réglages dans un fichier unique, ou restaure-les depuis une sauvegarde précédente.",
+  backup_include_credentials: "Inclure les identifiants IGDB",
+  backup_export: "Exporter une sauvegarde",
+  backup_import: "Restaurer une sauvegarde",
+  backup_export_done: "Enregistré sous {name}.",
+  backup_export_error: "Impossible d'enregistrer la sauvegarde.",
+  backup_read_error: "Impossible de lire le fichier.",
+  backup_invalid: "Ce fichier n'est pas une sauvegarde Backlog.",
+  backup_restore_confirm:
+    "Tout remplacer par cette sauvegarde ({games} jeux, {lists} listes) ? Les données actuelles seront perdues.",
+  backup_restore: "Restaurer",
+  backup_restore_done: "Sauvegarde restaurée.",
+  backup_restore_error: "Impossible de restaurer la sauvegarde.",
 
   // Sorting
   sort_alpha: "A-Z",

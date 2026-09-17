@@ -40,6 +40,8 @@ Built on top of [light-template](https://github.com/vandamd/light-template)
   (auto-translated to French when the app is in French) and a **full-screen
   screenshot viewer** (swipe, rotate, tap for controls).
 - **Lists** — create custom lists and add games to them.
+- **Backup** — export everything (library, lists, settings) to a single JSON
+  file from Settings, and restore it on any device.
 - **Bilingual** — English / French, switchable in Settings (defaults to the
   device language).
 - Covers and screenshots are shown in colour; everything else stays minimal

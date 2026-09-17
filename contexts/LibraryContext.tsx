@@ -23,6 +23,7 @@ interface LibraryContextType {
   getEntry: (id: number) => LibraryEntry | undefined;
   removeEntry: (id: number) => void;
   removeMany: (ids: number[]) => void;
+  replaceAll: (entries: Entries) => Promise<void>;
   setRating: (game: Game, rating: number) => void;
   setStatus: (game: Game, status: GameStatus) => void;
   setStatusMany: (ids: number[], status: GameStatus) => void;
@@ -39,6 +40,7 @@ const LibraryContext = createContext<LibraryContextType>({
   togglePlatform: () => undefined,
   removeEntry: () => undefined,
   removeMany: () => undefined,
+  replaceAll: () => Promise.resolve(),
   setStatusMany: () => undefined,
   clearAll: () => undefined,
 });
@@ -162,6 +164,11 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
 
   const clearAll = useCallback(() => setEntries({}), [setEntries]);
 
+  const replaceAll = useCallback(
+    (next: Entries) => setEntries(next),
+    [setEntries]
+  );
+
   const getEntry = useCallback((id: number) => entries[id], [entries]);
 
   const value = useMemo(
@@ -175,6 +182,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       togglePlatform,
       removeEntry,
       removeMany,
+      replaceAll,
       setStatusMany,
       clearAll,
     }),
@@ -189,6 +197,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       addPlatform,
       togglePlatform,
       removeEntry,
+      replaceAll,
       clearAll,
     ]
   );

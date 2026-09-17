@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { type Href, router } from "expo-router";
 import ContentContainer from "@/components/ContentContainer";
 import { SelectorButton } from "@/components/SelectorButton";
 import { StyledButton } from "@/components/StyledButton";
@@ -38,6 +38,10 @@ export default function SettingsScreen() {
       <StyledButton
         onPress={() => router.push("/settings/customise")}
         text={t("settings_customise")}
+      />
+      <StyledButton
+        onPress={() => router.push("/settings/backup" as Href)}
+        text={t("settings_backup")}
       />
       <StyledButton onPress={confirmClear} text={t("settings_clear_library")} />
     </ContentContainer>
