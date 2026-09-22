@@ -1,0 +1,53 @@
+{
+  "name": "NES + SNES",
+  "consoles": ["NES", "SNES"],
+  "entries": [
+    { "title": "Super Metroid", "expect": "Super Metroid", "year": 1994 },
+    {
+      "title": "A Link to the Past",
+      "expect": "The Legend of Zelda: A Link to the Past",
+      "year": 1991
+    },
+    { "title": "Chrono Trigger", "expect": "Chrono Trigger", "year": 1995 },
+    { "title": "EarthBound", "expect": "EarthBound", "year": 1994 },
+    {
+      "title": "Super Mario World",
+      "expect": "Super Mario World",
+      "year": 1990
+    },
+    { "title": "Mega Man 2", "expect": "Mega Man 2", "year": 1988 },
+    { "title": "Castlevania", "expect": "Castlevania", "year": 1986 },
+    { "title": "Contra", "expect": "Contra" },
+    {
+      "title": "Kirby's Adventure",
+      "expect": "Kirby's Adventure",
+      "year": 1993
+    },
+    { "title": "Final Fantasy VI", "expect": "Final Fantasy VI", "year": 1994 },
+    {
+      "title": "Donkey Kong Country",
+      "expect": "Donkey Kong Country",
+      "year": 1994
+    },
+    { "title": "Secret of Mana", "expect": "Secret of Mana", "year": 1993 },
+    {
+      "title": "Punch-Out!!",
+      "expect": ["Punch-Out!!", "Mike Tyson's Punch-Out!!"]
+    },
+    { "title": "Metroid", "expect": "Metroid", "year": 1986 },
+    {
+      "title": "Zelda II",
+      "expect": "Zelda II: The Adventure of Link",
+      "year": 1987
+    },
+    { "title": "Ninja Gaiden", "expect": "Ninja Gaiden" },
+    { "title": "Tetris", "expect": "Tetris" },
+    { "title": "Dr. Mario", "expect": "Dr. Mario", "year": 1990 },
+    { "title": "Star Fox", "expect": "Star Fox", "year": 1993 },
+    {
+      "title": "Super Mario Bros. 3",
+      "expect": "Super Mario Bros. 3",
+      "year": 1988
+    }
+  ]
+}

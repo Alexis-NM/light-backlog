@@ -1,5 +1,6 @@
 import { getDocumentAsync } from "expo-document-picker";
 import { readAsStringAsync } from "expo-file-system/legacy";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -13,22 +14,32 @@ import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
 import { StyledButton } from "@/components/StyledButton";
 import { StyledText } from "@/components/StyledText";
-import { TextInput } from "@/components/TextInput";
+import { placeholderColor, TextInput } from "@/components/TextInput";
 import { ToggleSwitch } from "@/components/ToggleSwitch";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { searchGames } from "@/services/igdb";
+import { IgdbError, searchGamesBatch, toGame } from "@/services/igdb";
+import { type ImportMatch, matchImportTitles } from "@/services/importMatcher";
 import { parseGameTitles } from "@/services/listParser";
-import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
 
 type Phase = "idle" | "matching" | "done" | "error";
 
-const SEARCH_DELAY_MS = 120;
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const REPORT_MAX_LINES = 25;
+const KEEP_AWAKE_TAG = "list-import";
+
+const describeMatch = (match: ImportMatch, offConsole: string) => {
+  const game = match.game;
+  if (!game) {
+    return match.title;
+  }
+  const year = game.year ? ` (${game.year})` : "";
+  const note = match.onPlatform ? "" : ` · ${offConsole}`;
+  return `${match.title} → ${game.name}${year}${note}`;
+};
 
 export default function ImportListScreen() {
   const { t } = useLanguage();
@@ -45,6 +56,7 @@ export default function ImportListScreen() {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [message, setMessage] = useState("");
   const [listId, setListId] = useState<string | null>(null);
+  const [matches, setMatches] = useState<ImportMatch[]>([]);
 
   const color = invertColors ? "black" : "white";
 
@@ -90,6 +102,16 @@ export default function ImportListScreen() {
     }
   };
 
+  const describeError = (error: unknown) => {
+    if (error instanceof IgdbError && error.kind === "auth") {
+      return t("creds_invalid");
+    }
+    if (error instanceof IgdbError && error.kind === "network") {
+      return t("network_error");
+    }
+    return error instanceof IgdbError ? error.message : t("error");
+  };
+
   const runImport = async () => {
     if (source.trim().length === 0 || running) {
       return;
@@ -103,19 +125,41 @@ export default function ImportListScreen() {
 
     setPhase("matching");
     setMessage("");
+    setMatches([]);
     setProgress({ done: 0, total: titles.length });
-    const matched: Game[] = [];
-    for (let i = 0; i < titles.length; i++) {
-      try {
-        const results = await searchGames(titles[i], auth);
-        if (results[0]) {
-          matched.push(results[0]);
-        }
-      } catch {
-        // Unmatched / failed lookups are simply skipped.
-      }
-      setProgress({ done: i + 1, total: titles.length });
-      await delay(SEARCH_DELAY_MS);
+
+    // A long import must not be paused by the screen turning off.
+    await activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => undefined);
+    let results: ImportMatch[];
+    try {
+      results = await matchImportTitles(
+        titles,
+        (queries) => searchGamesBatch(queries, auth),
+        { consoles, onProgress: (done, total) => setProgress({ done, total }) }
+      );
+    } catch (error) {
+      setMessage(describeError(error));
+      setPhase("error");
+      return;
+    } finally {
+      deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => undefined);
+    }
+
+    const matched = results
+      .map((match) => match.game)
+      .filter((game) => game !== undefined)
+      .map(toGame);
+
+    setMatches(results);
+    setMessage(
+      t("import_done", {
+        imported: matched.length,
+        notFound: titles.length - matched.length,
+      })
+    );
+    if (matched.length === 0) {
+      setPhase("done");
+      return;
     }
 
     const created = createListWithGames(
@@ -127,13 +171,36 @@ export default function ImportListScreen() {
       addMany(matched, "backlog", consoles);
     }
     setListId(created);
-    setMessage(
-      t("import_done", {
-        imported: matched.length,
-        notFound: titles.length - matched.length,
-      })
-    );
     setPhase("done");
+  };
+
+  const notFound = matches.filter((match) => !match.game);
+  const toCheck = matches.filter(
+    (match) =>
+      match.game && (match.confidence === "uncertain" || !match.onPlatform)
+  );
+
+  const renderReport = (title: string, items: ImportMatch[]) => {
+    if (items.length === 0) {
+      return null;
+    }
+    const shown = items.slice(0, REPORT_MAX_LINES);
+    const rest = items.length - shown.length;
+    return (
+      <View style={styles.field}>
+        <StyledText style={styles.label}>{title}</StyledText>
+        {shown.map((match) => (
+          <StyledText key={match.title} style={styles.reportLine}>
+            {describeMatch(match, t("import_off_console"))}
+          </StyledText>
+        ))}
+        {rest > 0 ? (
+          <StyledText style={styles.muted}>
+            {t("import_more", { count: rest })}
+          </StyledText>
+        ) : null}
+      </View>
+    );
   };
 
   return (
@@ -166,7 +233,7 @@ export default function ImportListScreen() {
             multiline
             onChangeText={setSource}
             placeholder={t("import_source_ph")}
-            placeholderTextColor={color}
+            placeholderTextColor={placeholderColor(invertColors)}
             style={[styles.source, { color, borderBottomColor: color }]}
             value={source}
           />
@@ -200,6 +267,16 @@ export default function ImportListScreen() {
         {message.length > 0 && !running ? (
           <StyledText style={styles.muted}>{message}</StyledText>
         ) : null}
+
+        {phase === "done"
+          ? renderReport(
+              t("import_not_found", { count: notFound.length }),
+              notFound
+            )
+          : null}
+        {phase === "done"
+          ? renderReport(t("import_check", { count: toCheck.length }), toCheck)
+          : null}
 
         {phase === "done" && listId ? (
           <StyledButton
@@ -247,5 +324,9 @@ const styles = StyleSheet.create({
   muted: {
     fontSize: n(15),
     opacity: 0.7,
+  },
+  reportLine: {
+    fontSize: n(15),
+    opacity: 0.85,
   },
 });

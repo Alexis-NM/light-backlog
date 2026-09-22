@@ -1,0 +1,62 @@
+{
+  "name": "Mixed, no console, with hints and typos",
+  "consoles": [],
+  "entries": [
+    {
+      "title": "zelda ocarina of time",
+      "expect": "The Legend of Zelda: Ocarina of Time",
+      "year": 1998
+    },
+    { "title": "Chrono Triger", "expect": "Chrono Trigger", "year": 1995 },
+    { "title": "Final Fantasy 7", "expect": "Final Fantasy VII", "year": 1997 },
+    { "title": "Doom (2016)", "expect": "Doom", "year": 2016 },
+    { "title": "Doom (1993)", "expect": "Doom", "year": 1993 },
+    {
+      "title": "Resident Evil 4 (2023)",
+      "expect": "Resident Evil 4",
+      "year": 2023
+    },
+    {
+      "title": "Resident Evil 4 (PS2)",
+      "expect": "Resident Evil 4",
+      "year": 2005
+    },
+    {
+      "title": "the witcher 3",
+      "expect": "The Witcher 3: Wild Hunt",
+      "year": 2015
+    },
+    {
+      "title": "Skyrim",
+      "expect": "The Elder Scrolls V: Skyrim",
+      "year": 2011
+    },
+    { "title": "Metroid Prime", "expect": "Metroid Prime", "year": 2002 },
+    { "title": "Half Life 2", "expect": "Half-Life 2", "year": 2004 },
+    { "title": "Portal 2", "expect": "Portal 2", "year": 2011 },
+    { "title": "Dark Souls", "expect": "Dark Souls", "year": 2011 },
+    { "title": "Bloodborne", "expect": "Bloodborne", "year": 2015 },
+    { "title": "Elden Ring", "expect": "Elden Ring", "year": 2022 },
+    { "title": "Mega Man X", "expect": "Mega Man X", "year": 1993 },
+    { "title": "Mega Man 10", "expect": "Mega Man 10", "year": 2010 },
+    {
+      "title": "Street Fighter II",
+      "expect": ["Street Fighter II: The World Warrior", "Street Fighter II"],
+      "year": 1991
+    },
+    {
+      "title": "Super Mario Bros 3",
+      "expect": "Super Mario Bros. 3",
+      "year": 1988
+    },
+    { "title": "Halo (Xbox)", "expect": "Halo: Combat Evolved", "year": 2001 },
+    { "title": "God of War (PS4)", "expect": "God of War", "year": 2018 },
+    { "title": "God of War (2005)", "expect": "God of War", "year": 2005 },
+    {
+      "title": "Shadow of the Colossus - PS4",
+      "expect": "Shadow of the Colossus",
+      "year": 2018
+    },
+    { "title": "Pokemon Red", "expect": ["Pokémon Red Version", "Pokémon Red"] }
+  ]
+}

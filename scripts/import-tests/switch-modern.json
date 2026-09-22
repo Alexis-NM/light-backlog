@@ -1,0 +1,66 @@
+{
+  "name": "Switch modern",
+  "consoles": ["Nintendo Switch"],
+  "entries": [
+    {
+      "title": "Breath of the Wild",
+      "expect": "The Legend of Zelda: Breath of the Wild",
+      "year": 2017
+    },
+    {
+      "title": "Zelda Tears of the Kingdom",
+      "expect": "The Legend of Zelda: Tears of the Kingdom",
+      "year": 2023
+    },
+    {
+      "title": "Super Mario Odyssey",
+      "expect": "Super Mario Odyssey",
+      "year": 2017
+    },
+    { "title": "Hades", "expect": "Hades" },
+    { "title": "Hollow Knight", "expect": "Hollow Knight", "year": 2017 },
+    { "title": "Celeste", "expect": "Celeste", "year": 2018 },
+    { "title": "Metroid Dread", "expect": "Metroid Dread", "year": 2021 },
+    {
+      "title": "Animal Crossing New Horizons",
+      "expect": "Animal Crossing: New Horizons",
+      "year": 2020
+    },
+    {
+      "title": "Fire Emblem Three Houses",
+      "expect": "Fire Emblem: Three Houses",
+      "year": 2019
+    },
+    {
+      "title": "Xenoblade Chronicles 3",
+      "expect": "Xenoblade Chronicles 3",
+      "year": 2022
+    },
+    {
+      "title": "Mario Kart 8 Deluxe",
+      "expect": "Mario Kart 8 Deluxe",
+      "year": 2017
+    },
+    { "title": "Bayonetta 3", "expect": "Bayonetta 3", "year": 2022 },
+    { "title": "Pikmin 4", "expect": "Pikmin 4", "year": 2023 },
+    {
+      "title": "Octopath Traveler",
+      "expect": "Octopath Traveler",
+      "year": 2018
+    },
+    { "title": "Stardew Valley", "expect": "Stardew Valley", "year": 2016 },
+    { "title": "Dead Cells", "expect": "Dead Cells", "year": 2018 },
+    { "title": "Persona 5 Royal", "expect": "Persona 5 Royal" },
+    {
+      "title": "Link's Awakening",
+      "expect": "The Legend of Zelda: Link's Awakening",
+      "year": 2019
+    },
+    {
+      "title": "Luigi's Mansion 3",
+      "expect": "Luigi's Mansion 3",
+      "year": 2019
+    },
+    { "title": "Splatoon 3", "expect": "Splatoon 3", "year": 2022 }
+  ]
+}

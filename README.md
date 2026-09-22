@@ -27,6 +27,8 @@ Built on top of [light-template](https://github.com/vandamd/light-template)
   Backlog / Wishlist) and by **console**. Both filters are remembered. A
   **full-screen grid** mode hides the chrome for a pure cover wall.
 - **Ratings** — half-star ratings, kept monochrome to match the LightOS look.
+  The game page also shows the IGDB scores (overall, users, critics), and the
+  library and lists can be sorted by your rating or by IGDB rating.
 - **Games** — browse popular titles **by console** (PlayStation, Xbox, Nintendo,
   Sega, PC, retro & arcade — Switch 2, Playdate, Game Boy, Neo Geo…). Endless
   scroll, and the chosen console is remembered between sessions.
@@ -35,11 +37,20 @@ Built on top of [light-template](https://github.com/vandamd/light-template)
   library.
 - **Per-console filing** — when adding a game you pick which of *its* available
   consoles to file it under, Backloggd-style. The choice is remembered.
-- **Search** — find any game in the IGDB database and add it to your library.
+- **Search** — find any game in the IGDB database and add it to your library,
+  optionally restricted to one or more consoles (the filter is remembered).
 - **Game detail** — cover, platforms, status, rating, **description**
   (auto-translated to French when the app is in French) and a **full-screen
   screenshot viewer** (swipe, rotate, tap for controls).
-- **Lists** — create custom lists and add games to them.
+- **Lists** — create custom lists and add games to them. Each list can pick
+  its own sort (A-Z, Z-A, recently added, IGDB rating) from a row under its
+  consoles; lists without a choice follow the global setting.
+- **Import** — paste or pick a list of titles (one per line, Markdown or
+  CSV) to build a list in one go. Each title is looked up on IGDB restricted
+  to the list's consoles, and the main game is preferred over DLCs, bundles
+  and special editions. A year or console after a title settles ambiguous
+  ones (`Doom (2016)`, `Halo (Xbox)`, `God of War - PS4`), and the import
+  ends with the titles that were not found or are worth a check.
 - **Backup** — export everything (library, lists, settings) to a single JSON
   file from Settings, and restore it on any device.
 - **Bilingual** — English / French, switchable in Settings (defaults to the
@@ -105,9 +116,27 @@ JAVA_HOME=<path-to-jdk-17> ./gradlew assembleRelease
 bun dev                # Build and run
 bun run check          # Lint (ultracite / biome)
 bun run fix            # Auto-fix lint issues
+bun test               # Unit tests (list parser, import matcher)
+bun run test:import    # Live IGDB run of the import matcher (see below)
 bun run sync-version   # Sync version across files
 bun run generate-icon  # Generate icon from app name
 ```
+
+### Checking the list import against IGDB
+
+`scripts/import-tests/*.json` hold sample lists (typed titles, the list's
+consoles, and the game each title should resolve to). The script matches them
+through the real API, prints every pick, and compares with the naive
+"first search result" the import used before:
+
+```bash
+IGDB_CLIENT_ID=… IGDB_CLIENT_SECRET=… bun run test:import            # all lists
+IGDB_CLIENT_ID=… IGDB_CLIENT_SECRET=… bun run test:import ps2        # one list
+IGDB_CLIENT_ID=… IGDB_CLIENT_SECRET=… bun run test:import --no-baseline
+```
+
+Add a list (or an entry that went wrong for you) and re-run before touching
+the scoring in `services/importMatcher.ts`.
 
 ## Releases (CI)
 

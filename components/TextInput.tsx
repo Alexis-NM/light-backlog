@@ -12,6 +12,10 @@ interface TextInputProps {
   value: string;
 }
 
+/** Placeholders are dimmed like inactive chips, so they read as hints, not values. */
+export const placeholderColor = (invertColors: boolean) =>
+  invertColors ? "rgba(0, 0, 0, 0.45)" : "rgba(255, 255, 255, 0.45)";
+
 export function TextInput({
   value,
   onChangeText,
@@ -39,7 +43,7 @@ export function TextInput({
         onChangeText={onChangeText}
         onSubmitEditing={onSubmit}
         placeholder={placeholder}
-        placeholderTextColor={textColor}
+        placeholderTextColor={placeholderColor(invertColors)}
         returnKeyType="search"
         selectionColor={textColor}
         style={[styles.input, { color: textColor }]}

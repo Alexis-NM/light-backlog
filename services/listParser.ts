@@ -41,6 +41,12 @@ export function parseGameTitles(text: string): string[] {
     nameIndex = idx >= 0 ? idx : 0;
   }
 
+  // Without a header, only treat the text as CSV when most lines are
+  // delimited — a lone "Hey You, Pikachu!" in a plain list stays whole.
+  const filled = lines.filter((line) => line.trim().length > 0);
+  const delimited = filled.filter((line) => DELIM_RE.test(line)).length;
+  const isCsv = hasHeader || delimited * 2 > filled.length;
+
   for (let i = 0; i < lines.length; i++) {
     if (hasHeader && i === 0) {
       continue;
@@ -49,7 +55,7 @@ export function parseGameTitles(text: string): string[] {
     if (!line) {
       continue;
     }
-    if (hasHeader || DELIM_RE.test(line)) {
+    if (isCsv && DELIM_RE.test(line)) {
       const cols = splitCsv(line);
       line = (cols[nameIndex] ?? cols[0] ?? "").trim();
     }

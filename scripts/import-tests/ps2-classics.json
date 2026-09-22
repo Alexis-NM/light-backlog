@@ -1,0 +1,58 @@
+{
+  "name": "PS2 classics",
+  "consoles": ["PlayStation 2"],
+  "entries": [
+    { "title": "God of War", "expect": "God of War", "year": 2005 },
+    {
+      "title": "Shadow of the Colossus",
+      "expect": "Shadow of the Colossus",
+      "year": 2005
+    },
+    { "title": "Final Fantasy X", "expect": "Final Fantasy X", "year": 2001 },
+    {
+      "title": "Metal Gear Solid 3",
+      "expect": "Metal Gear Solid 3: Snake Eater",
+      "year": 2004
+    },
+    { "title": "Kingdom Hearts", "expect": "Kingdom Hearts", "year": 2002 },
+    {
+      "title": "Kingdom Hearts II",
+      "expect": "Kingdom Hearts II",
+      "year": 2005
+    },
+    { "title": "Okami", "expect": "Ōkami", "year": 2006 },
+    {
+      "title": "Persona 4",
+      "expect": ["Shin Megami Tensei: Persona 4", "Persona 4"],
+      "year": 2008
+    },
+    { "title": "Silent Hill 2", "expect": "Silent Hill 2", "year": 2001 },
+    { "title": "Resident Evil 4", "expect": "Resident Evil 4", "year": 2005 },
+    { "title": "Ico", "expect": "Ico", "year": 2001 },
+    {
+      "title": "GTA San Andreas",
+      "expect": "Grand Theft Auto: San Andreas",
+      "year": 2004
+    },
+    {
+      "title": "Devil May Cry 3",
+      "expect": "Devil May Cry 3: Dante's Awakening",
+      "year": 2005
+    },
+    { "title": "Ratchet & Clank", "expect": "Ratchet & Clank", "year": 2002 },
+    {
+      "title": "Jak and Daxter",
+      "expect": "Jak and Daxter: The Precursor Legacy",
+      "year": 2001
+    },
+    { "title": "Burnout 3", "expect": "Burnout 3: Takedown", "year": 2004 },
+    {
+      "title": "Dragon Quest VIII",
+      "expect": "Dragon Quest VIII: Journey of the Cursed King",
+      "year": 2004
+    },
+    { "title": "Katamari Damacy", "expect": "Katamari Damacy", "year": 2004 },
+    { "title": "Gran Turismo 4", "expect": "Gran Turismo 4", "year": 2004 },
+    { "title": "Tekken 5", "expect": "Tekken 5", "year": 2004 }
+  ]
+}

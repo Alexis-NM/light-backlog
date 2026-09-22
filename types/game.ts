@@ -15,10 +15,32 @@ export interface Platform {
 export interface Game {
   coverUrl?: string;
   id: number;
+  /** IGDB press (aggregated) rating, 0–100. `null` when IGDB has none, absent when not fetched yet. */
+  igdbCriticRating?: number | null;
+  /** IGDB total rating, 0–100. `null` when IGDB has none, absent when not fetched yet. */
+  igdbRating?: number | null;
+  /** IGDB members' rating, 0–100. `null` when IGDB has none, absent when not fetched yet. */
+  igdbUserRating?: number | null;
   name: string;
   platforms?: Platform[];
   year?: number;
 }
+
+/** The three IGDB scores as stored on a Game (null = IGDB has none). */
+export type StoredRatings = Pick<
+  Required<Game>,
+  "igdbCriticRating" | "igdbRating" | "igdbUserRating"
+>;
+
+export const hasRatings = (game: Game) =>
+  game.igdbRating !== undefined &&
+  game.igdbUserRating !== undefined &&
+  game.igdbCriticRating !== undefined;
+
+export const sameRatings = (game: Game, stored: StoredRatings) =>
+  game.igdbRating === stored.igdbRating &&
+  game.igdbUserRating === stored.igdbUserRating &&
+  game.igdbCriticRating === stored.igdbCriticRating;
 
 export interface LibraryEntry {
   addedAt: number;
@@ -39,6 +61,8 @@ export function entryPlatforms(entry: LibraryEntry): string[] {
   return entry.platform ? [entry.platform] : [];
 }
 
+export type SortMode = "alpha" | "alpha_desc" | "igdb" | "rating" | "recent";
+
 export interface GameList {
   consoles?: string[];
   createdAt: number;
@@ -46,6 +70,8 @@ export interface GameList {
   games: Record<number, Game>;
   id: string;
   name: string;
+  /** Overrides the global list sort for this list. */
+  sort?: SortMode;
 }
 
 export interface Console {

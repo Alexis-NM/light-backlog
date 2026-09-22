@@ -14,6 +14,8 @@ Expo template with pre-built components and patterns.
 - `bun run generate-readme-image` - Generate README example image (requires A.png, B.png, C.png, D.png in assets/images/)
 - `bun run check` - Lint
 - `bun run fix` - Automatically fix linting issues
+- `bun test` - Unit tests (`*.test.ts`, run with `bun:test`)
+- `bun run test:import` - Live check of the list-import matcher against IGDB (needs `IGDB_CLIENT_ID` / `IGDB_CLIENT_SECRET`)
 
 ## Setup
 Update `app.json`:

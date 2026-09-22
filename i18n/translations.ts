@@ -1,19 +1,11 @@
 const en = {
   // Tabs
-  tab_library: "Library",
-  tab_games: "Games",
-  tab_lists: "Lists",
-  tab_settings: "Settings",
 
   // Generic
-  save: "Save",
-  cancel: "Cancel",
-  create: "Create",
   delete: "Delete",
   remove: "Remove",
   done: "Done",
   loading: "Loading…",
-  retry: "Retry",
   error: "Error",
   network_error: "Network error. Check your connection.",
 
@@ -28,7 +20,6 @@ const en = {
   library_title: "Library",
   library_empty: "Your library is empty",
   library_empty_hint: "Search for games to start tracking them.",
-  library_count: "{count} games",
   library_selected: "{count} selected",
   library_remove_confirm: "Remove the selected games from your library?",
 
@@ -43,19 +34,18 @@ const en = {
   game_unrated: "Not rated",
   game_platforms: "Platforms",
   game_set_status: "Status",
-  game_rating: "Rating",
+  game_rating: "My rating",
+  game_rating_users: "Users",
+  game_rating_critics: "Critics",
   game_description: "Description",
   game_images: "Screenshots",
-  game_lists: "Lists",
   game_add_to_list: "Add to a list",
   game_remove: "Remove from library",
   game_remove_confirm: "Remove this game from your library?",
-  game_not_in_library: "Not in your library yet.",
 
   // Games browse
   games_title: "Games",
   games_choose_console: "Browse by console",
-  games_popular_on: "Popular on {platform}",
   games_no_creds: "IGDB credentials required",
   games_no_creds_hint:
     "Add your IGDB credentials in Settings to browse and search games.",
@@ -87,12 +77,16 @@ const en = {
   import_name_ph: "Imported list",
   import_to_library: "Also add to my library",
   import_run: "Import",
-  import_fetching: "Fetching the list…",
   import_matching: "Matching games… {done}/{total}",
   import_done: "Imported {imported} games ({notFound} not found)",
   import_empty: "No games found in the source.",
   import_error: "Could not read the list. Check the link or paste the text.",
+  import_not_found: "Not found ({count})",
+  import_check: "Worth checking ({count})",
+  import_off_console: "not on the selected consoles",
+  import_more: "+{count} more",
   list_consoles: "Consoles",
+  list_sort: "Sort",
   list_add_all: "Add all to library",
   list_add_to_library: "Add to library",
   list_rename: "Rename list",
@@ -137,7 +131,8 @@ const en = {
   sort_alpha: "A-Z",
   sort_alpha_desc: "Z-A",
   sort_recent: "Recently added",
-  sort_rating: "Rating",
+  sort_rating: "My rating",
+  sort_igdb: "IGDB rating",
 
   // Credentials
   creds_title: "IGDB Credentials",
@@ -148,14 +143,12 @@ const en = {
   creds_client_id_ph: "Twitch Client ID",
   creds_client_secret_ph: "Twitch Client Secret",
   creds_save: "Save credentials",
-  creds_saved: "Credentials saved.",
   creds_clear: "Clear credentials",
   creds_help: "How to get credentials",
   creds_missing: "Enter both a Client ID and a Client Secret.",
   creds_invalid: "Could not authenticate. Check your credentials.",
 
   // Language
-  language_title: "Language",
   language_en: "English",
   language_fr: "Français",
 
@@ -174,20 +167,12 @@ export type TranslationKey = keyof typeof en;
 
 const fr: Record<TranslationKey, string> = {
   // Tabs
-  tab_library: "Biblio",
-  tab_games: "Jeux",
-  tab_lists: "Listes",
-  tab_settings: "Réglages",
 
   // Generic
-  save: "Enregistrer",
-  cancel: "Annuler",
-  create: "Créer",
   delete: "Supprimer",
   remove: "Retirer",
   done: "OK",
   loading: "Chargement…",
-  retry: "Réessayer",
   error: "Erreur",
   network_error: "Erreur réseau. Vérifie ta connexion.",
 
@@ -202,7 +187,6 @@ const fr: Record<TranslationKey, string> = {
   library_title: "Bibliothèque",
   library_empty: "Ta bibliothèque est vide",
   library_empty_hint: "Cherche des jeux pour commencer à les suivre.",
-  library_count: "{count} jeux",
   library_selected: "{count} sélectionnés",
   library_remove_confirm: "Retirer les jeux sélectionnés de ta bibliothèque ?",
 
@@ -217,19 +201,18 @@ const fr: Record<TranslationKey, string> = {
   game_unrated: "Non noté",
   game_platforms: "Plateformes",
   game_set_status: "Statut",
-  game_rating: "Note",
+  game_rating: "Ma note",
+  game_rating_users: "Joueurs",
+  game_rating_critics: "Presse",
   game_description: "Description",
   game_images: "Images",
-  game_lists: "Listes",
   game_add_to_list: "Ajouter à une liste",
   game_remove: "Retirer de la bibliothèque",
   game_remove_confirm: "Retirer ce jeu de ta bibliothèque ?",
-  game_not_in_library: "Pas encore dans ta bibliothèque.",
 
   // Games browse
   games_title: "Jeux",
   games_choose_console: "Parcourir par console",
-  games_popular_on: "Populaires sur {platform}",
   games_no_creds: "Identifiants IGDB requis",
   games_no_creds_hint:
     "Ajoute tes identifiants IGDB dans les Réglages pour parcourir et chercher des jeux.",
@@ -262,13 +245,17 @@ const fr: Record<TranslationKey, string> = {
   import_name_ph: "Liste importée",
   import_to_library: "Ajouter aussi à ma bibliothèque",
   import_run: "Importer",
-  import_fetching: "Récupération de la liste…",
   import_matching: "Recherche des jeux… {done}/{total}",
   import_done: "{imported} jeux importés ({notFound} introuvables)",
   import_empty: "Aucun jeu trouvé dans la source.",
   import_error:
     "Impossible de lire la liste. Vérifie le lien ou colle le texte.",
+  import_not_found: "Introuvables ({count})",
+  import_check: "À vérifier ({count})",
+  import_off_console: "pas sur les consoles choisies",
+  import_more: "+{count} de plus",
   list_consoles: "Consoles",
+  list_sort: "Tri",
   list_add_all: "Tout ajouter à la bibliothèque",
   list_add_to_library: "Ajouter à la bibliothèque",
   list_rename: "Renommer la liste",
@@ -313,7 +300,8 @@ const fr: Record<TranslationKey, string> = {
   sort_alpha: "A-Z",
   sort_alpha_desc: "Z-A",
   sort_recent: "Récemment ajouté",
-  sort_rating: "Note",
+  sort_rating: "Ma note",
+  sort_igdb: "Note IGDB",
 
   // Credentials
   creds_title: "Identifiants IGDB",
@@ -324,14 +312,12 @@ const fr: Record<TranslationKey, string> = {
   creds_client_id_ph: "Client ID Twitch",
   creds_client_secret_ph: "Client Secret Twitch",
   creds_save: "Enregistrer les identifiants",
-  creds_saved: "Identifiants enregistrés.",
   creds_clear: "Effacer les identifiants",
   creds_help: "Comment obtenir des identifiants",
   creds_missing: "Saisis un Client ID et un Client Secret.",
   creds_invalid: "Authentification impossible. Vérifie tes identifiants.",
 
   // Language
-  language_title: "Langue",
   language_en: "English",
   language_fr: "Français",
 

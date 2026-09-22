@@ -8,7 +8,9 @@
     "generate-icon": "bun scripts/generate-icon.js",
     "generate-readme-image": "bun scripts/generate-readme-image.js",
     "check": "ultracite check",
-    "fix": "ultracite fix"
+    "fix": "ultracite fix",
+    "test": "bun test",
+    "test:import": "bun scripts/test-import.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -20,6 +22,7 @@
     "expo-font": "^55.0.4",
     "expo-haptics": "~55.0.0",
     "expo-image": "~55.0.11",
+    "expo-keep-awake": "~55.0.8",
     "expo-linking": "~55.0.0",
     "expo-localization": "~55.0.0",
     "expo-router": "~55.0.0",
@@ -35,6 +38,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.9",
+    "@types/bun": "^1.4.2",
     "@types/react": "~19.2.0",
     "canvas": "^3.2.1",
     "typescript": "~5.9.2",

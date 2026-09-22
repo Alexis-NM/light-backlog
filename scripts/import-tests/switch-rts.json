@@ -1,0 +1,35 @@
+{
+  "name": "Switch RTS (user list, first 12 of 23)",
+  "consoles": ["Nintendo Switch"],
+  "entries": [
+    { "title": "Northgard", "expect": "Northgard", "year": 2018 },
+    { "title": "SteamWorld Build", "expect": "SteamWorld Build", "year": 2023 },
+    { "title": "Tropico 6", "expect": "Tropico 6", "year": 2019 },
+    { "title": "Ancestors Legacy", "expect": "Ancestors Legacy", "year": 2018 },
+    { "title": "Port Royale 4", "expect": "Port Royale 4", "year": 2020 },
+    {
+      "title": "Bad North",
+      "expect": ["Bad North", "Bad North: Jotunn Edition"]
+    },
+    { "title": "Pikmin 4", "expect": "Pikmin 4", "year": 2023 },
+    { "title": "Armello", "expect": "Armello", "year": 2015 },
+    {
+      "title": "The DioField Chronicle",
+      "expect": "The DioField Chronicle",
+      "year": 2022
+    },
+    {
+      "title": "Swords & Soldiers",
+      "expect": ["Swords & Soldiers", "Swords & Soldiers HD"]
+    },
+    {
+      "title": "Swords & Soldiers 2",
+      "expect": ["Swords & Soldiers 2 Shawarmageddon", "Swords & Soldiers II"]
+    },
+    {
+      "title": "Kingdom: New Lands",
+      "expect": "Kingdom: New Lands",
+      "year": 2016
+    }
+  ]
+}
