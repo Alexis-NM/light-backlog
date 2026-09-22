@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { ChipSelect } from "@/components/ChipSelect";
 import { ConsoleSelect } from "@/components/ConsoleSelect";
 import ContentContainer from "@/components/ContentContainer";
 import { yearOf } from "@/components/GameGrid";
@@ -12,9 +13,10 @@ import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { type SortMode, useSort } from "@/contexts/SortContext";
+import { LIST_SORTS, type SortMode, useSort } from "@/contexts/SortContext";
+import type { TranslationKey } from "@/i18n/translations";
 import type { Game, GameList } from "@/types/game";
-import { compareNames } from "@/utils/compareNames";
+import { compareIgdbRating, compareNames } from "@/utils/compareNames";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 
@@ -24,6 +26,9 @@ function orderedGames(list: GameList, sort: SortMode) {
     .filter((game): game is Game => game !== undefined);
   if (sort === "recent") {
     return games;
+  }
+  if (sort === "igdb") {
+    return games.sort(compareIgdbRating);
   }
   return games.sort((a, b) =>
     sort === "alpha_desc"
@@ -35,8 +40,13 @@ function orderedGames(list: GameList, sort: SortMode) {
 export default function ListDetailScreen() {
   const { t } = useLanguage();
   const confirm = useConfirm();
-  const { getList, deleteList, setListConsoles, removeGamesFromList } =
-    useLists();
+  const {
+    getList,
+    deleteList,
+    setListConsoles,
+    setListSort,
+    removeGamesFromList,
+  } = useLists();
   const { addMany } = useLibrary();
   const { listFullscreen, setListFullscreen } = useFullscreen();
   const { listSort } = useSort();
@@ -45,10 +55,20 @@ export default function ListDetailScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const list = getList(params.id);
+  const sort = list?.sort ?? listSort;
 
   const games = useMemo(
-    () => (list ? orderedGames(list, listSort) : []),
-    [list, listSort]
+    () => (list ? orderedGames(list, sort) : []),
+    [list, sort]
+  );
+
+  const sortOptions = useMemo(
+    () =>
+      LIST_SORTS.map((mode) => ({
+        label: t(`sort_${mode}` as TranslationKey),
+        value: mode,
+      })),
+    [t]
   );
 
   const toggleSelect = useCallback(
@@ -145,9 +165,19 @@ export default function ListDetailScreen() {
       getSubtitle={yearOf}
       header={
         selectionMode || listFullscreen ? undefined : (
-          <View style={styles.section}>
-            <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
-            <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
+          <View>
+            <View style={styles.section}>
+              <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
+              <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
+            </View>
+            <View style={styles.section}>
+              <StyledText style={styles.label}>{t("list_sort")}</StyledText>
+              <ChipSelect
+                onSelect={(mode) => setListSort(params.id, mode)}
+                options={sortOptions}
+                selected={sort}
+              />
+            </View>
           </View>
         )
       }
