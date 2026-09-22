@@ -11,6 +11,8 @@ import {
   type Game,
   type GameStatus,
   type LibraryEntry,
+  type StoredRatings,
+  sameRatings,
 } from "@/types/game";
 
 type Entries = Record<number, LibraryEntry>;
@@ -24,6 +26,8 @@ interface LibraryContextType {
   removeEntry: (id: number) => void;
   removeMany: (ids: number[]) => void;
   replaceAll: (entries: Entries) => Promise<void>;
+  /** Stores IGDB ratings by game id without touching the entries' dates. */
+  setIgdbRatings: (ratings: Record<number, StoredRatings>) => void;
   setRating: (game: Game, rating: number) => void;
   setStatus: (game: Game, status: GameStatus) => void;
   setStatusMany: (ids: number[], status: GameStatus) => void;
@@ -41,6 +45,7 @@ const LibraryContext = createContext<LibraryContextType>({
   removeEntry: () => undefined,
   removeMany: () => undefined,
   replaceAll: () => Promise.resolve(),
+  setIgdbRatings: () => undefined,
   setStatusMany: () => undefined,
   clearAll: () => undefined,
 });
@@ -162,6 +167,27 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
     [entries, setEntries]
   );
 
+  const setIgdbRatings = useCallback(
+    (ratings: Record<number, StoredRatings>) => {
+      const next = { ...entries };
+      let changed = false;
+      for (const [key, stored] of Object.entries(ratings)) {
+        const existing = next[Number(key)];
+        if (existing && !sameRatings(existing.game, stored)) {
+          next[Number(key)] = {
+            ...existing,
+            game: { ...existing.game, ...stored },
+          };
+          changed = true;
+        }
+      }
+      if (changed) {
+        setEntries(next);
+      }
+    },
+    [entries, setEntries]
+  );
+
   const clearAll = useCallback(() => setEntries({}), [setEntries]);
 
   const replaceAll = useCallback(
@@ -183,6 +209,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       removeEntry,
       removeMany,
       replaceAll,
+      setIgdbRatings,
       setStatusMany,
       clearAll,
     }),
@@ -192,6 +219,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       setStatus,
       setRating,
       removeMany,
+      setIgdbRatings,
       setStatusMany,
       addMany,
       addPlatform,

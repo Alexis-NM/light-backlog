@@ -13,9 +13,11 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import { ListsProvider } from "@/contexts/ListsContext";
 import { SortProvider } from "@/contexts/SortContext";
+import { useIgdbRatingsBackfill } from "@/hooks/useIgdbRatings";
 
 function RootLayout() {
   const { invertColors } = useInvertColors();
+  useIgdbRatingsBackfill();
 
   return (
     <Stack

@@ -20,7 +20,7 @@ import {
   type GameStatus,
   type LibraryEntry,
 } from "@/types/game";
-import { compareNames } from "@/utils/compareNames";
+import { compareIgdbRating, compareNames } from "@/utils/compareNames";
 import { n } from "@/utils/scaling";
 
 type Filter = "all" | GameStatus;
@@ -83,6 +83,8 @@ export default function LibraryScreen() {
         return list.sort((a, b) => b.updatedAt - a.updatedAt);
       case "rating":
         return list.sort((a, b) => b.rating - a.rating || byName(a, b));
+      case "igdb":
+        return list.sort((a, b) => compareIgdbRating(a.game, b.game));
       default:
         return list.sort(byName);
     }

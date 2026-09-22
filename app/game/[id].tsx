@@ -107,6 +107,24 @@ export default function GameDetailScreen() {
     summaryText = translatedSummary;
   }
 
+  // Ratings stored on the game show at once; the detail request refreshes
+  // them. A game IGDB has not rated (null) shows no block at all.
+  const ratings = details?.ratings;
+  const totalRating = ratings?.total ?? game.igdbRating;
+  const ratingStats = totalRating
+    ? [
+        { label: "IGDB", value: totalRating },
+        {
+          label: t("game_rating_users"),
+          value: ratings?.users ?? game.igdbUserRating,
+        },
+        {
+          label: t("game_rating_critics"),
+          value: ratings?.critics ?? game.igdbCriticRating,
+        },
+      ]
+    : [];
+
   return (
     <ContentContainer headerTitle={game.name}>
       <View style={styles.body}>
@@ -116,6 +134,20 @@ export default function GameDetailScreen() {
             <StyledText style={styles.title}>{game.name}</StyledText>
             {game.year ? (
               <StyledText style={styles.meta}>{game.year}</StyledText>
+            ) : null}
+            {ratingStats.length > 0 ? (
+              <View style={styles.statRow}>
+                {ratingStats.map((stat) => (
+                  <View key={stat.label}>
+                    <StyledText style={styles.statValue}>
+                      {stat.value ?? "–"}
+                    </StyledText>
+                    <StyledText style={styles.statLabel}>
+                      {stat.label}
+                    </StyledText>
+                  </View>
+                ))}
+              </View>
             ) : null}
           </View>
         </View>
@@ -268,6 +300,21 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: n(14),
     opacity: 0.6,
+  },
+  statRow: {
+    flexDirection: "row",
+    gap: n(18),
+    marginTop: n(8),
+  },
+  statValue: {
+    fontSize: n(18),
+    lineHeight: n(22),
+  },
+  statLabel: {
+    fontSize: n(10),
+    opacity: 0.45,
+    textTransform: "uppercase",
+    letterSpacing: n(0.8),
   },
   section: {
     gap: n(12),

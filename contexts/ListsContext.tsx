@@ -15,7 +15,13 @@ import {
   saveList,
   saveListOrder,
 } from "@/services/listStorage";
-import type { Game, GameList } from "@/types/game";
+import {
+  type Game,
+  type GameList,
+  type SortMode,
+  type StoredRatings,
+  sameRatings,
+} from "@/types/game";
 
 interface ListsContextType {
   addGamesToList: (listId: string, games: Game[]) => void;
@@ -35,7 +41,10 @@ interface ListsContextType {
   removeGamesFromList: (listId: string, gameIds: number[]) => void;
   renameList: (id: string, name: string) => void;
   replaceAll: (lists: GameList[]) => Promise<void>;
+  /** Stores IGDB ratings by game id in every list that holds the game. */
+  setIgdbRatings: (ratings: Record<number, StoredRatings>) => void;
   setListConsoles: (id: string, consoles: string[]) => void;
+  setListSort: (id: string, sort: SortMode) => void;
 }
 
 const ListsContext = createContext<ListsContextType>({
@@ -51,7 +60,9 @@ const ListsContext = createContext<ListsContextType>({
   removeGamesFromList: () => undefined,
   renameList: () => undefined,
   replaceAll: () => Promise.resolve(),
+  setIgdbRatings: () => undefined,
   setListConsoles: () => undefined,
+  setListSort: () => undefined,
   clearAll: () => undefined,
 });
 
@@ -71,6 +82,21 @@ function withGames(list: GameList, games: Game[]): GameList {
     }
   }
   return { ...list, gameIds: [...newIds, ...list.gameIds], games: gamesMap };
+}
+
+function withRatings(
+  list: GameList,
+  ratings: Record<number, StoredRatings>
+): GameList {
+  let games: Record<number, Game> | null = null;
+  for (const [key, stored] of Object.entries(ratings)) {
+    const game = list.games[Number(key)];
+    if (game && !sameRatings(game, stored)) {
+      games ??= { ...list.games };
+      games[Number(key)] = { ...game, ...stored };
+    }
+  }
+  return games ? { ...list, games } : list;
 }
 
 function withoutGames(list: GameList, gameIds: number[]): GameList {
@@ -167,6 +193,12 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     [updateList]
   );
 
+  const setListSort = useCallback(
+    (id: string, sort: SortMode) =>
+      updateList(id, (list) => ({ ...list, sort })),
+    [updateList]
+  );
+
   const deleteList = useCallback(
     (id: string) => {
       const next = lists.filter((list) => list.id !== id);
@@ -220,6 +252,21 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     [updateList]
   );
 
+  const setIgdbRatings = useCallback(
+    (ratings: Record<number, StoredRatings>) => {
+      const next = lists.map((list) => withRatings(list, ratings));
+      const changed = next.filter((list, index) => list !== lists[index]);
+      if (changed.length === 0) {
+        return;
+      }
+      setLists(next);
+      for (const list of changed) {
+        saveList(list);
+      }
+    },
+    [lists]
+  );
+
   const clearAll = useCallback(() => {
     setLists([]);
     removeAllLists(lists);
@@ -248,7 +295,9 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       removeGamesFromList,
       renameList,
       replaceAll,
+      setIgdbRatings,
       setListConsoles,
+      setListSort,
       clearAll,
     }),
     [
@@ -256,7 +305,9 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       getList,
       createList,
       createListWithGames,
+      setIgdbRatings,
       setListConsoles,
+      setListSort,
       deleteList,
       addGameToList,
       addGamesToList,
