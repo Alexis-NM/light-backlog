@@ -1,16 +1,19 @@
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ConsoleSelect } from "@/components/ConsoleSelect";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
 import { yearOf } from "@/components/GameGrid";
 import { GameGridContainer } from "@/components/GameGridContainer";
 import { StyledText } from "@/components/StyledText";
 import { TextInput } from "@/components/TextInput";
+import { platformIdsFor } from "@/constants/consoles";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { IgdbError, searchGames } from "@/services/igdb";
 import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
@@ -23,6 +26,10 @@ export default function SearchScreen() {
   const { invertColors } = useInvertColors();
   const { getEntry } = useLibrary();
   const [query, setQuery] = useState("");
+  const [consoles, setConsoles] = usePersistedState<string[]>(
+    "search_consoles",
+    []
+  );
   const [results, setResults] = useState<Game[]>([]);
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorText, setErrorText] = useState("");
@@ -46,14 +53,18 @@ export default function SearchScreen() {
     );
   }
 
-  const runSearch = async () => {
+  const search = async (selectedConsoles: string[]) => {
     if (query.trim().length === 0) {
       return;
     }
     setPhase("loading");
     setErrorText("");
     try {
-      const found = await searchGames(query, auth);
+      const found = await searchGames(
+        query,
+        auth,
+        platformIdsFor(selectedConsoles)
+      );
       setResults(found);
       setPhase("done");
     } catch (error) {
@@ -68,6 +79,17 @@ export default function SearchScreen() {
       }
       setPhase("error");
     }
+  };
+
+  const runSearch = () => search(consoles);
+
+  // Changing the console filter re-runs the current search.
+  const toggleConsole = (name: string) => {
+    const next = consoles.includes(name)
+      ? consoles.filter((c) => c !== name)
+      : [...consoles, name];
+    setConsoles(next);
+    search(next);
   };
 
   const status = (() => {
@@ -111,6 +133,10 @@ export default function SearchScreen() {
             placeholder={t("search_placeholder")}
             value={query}
           />
+          <View style={styles.filter}>
+            <StyledText style={styles.label}>{t("list_consoles")}</StyledText>
+            <ConsoleSelect onToggle={toggleConsole} selected={consoles} />
+          </View>
           {status}
         </View>
       }
@@ -129,6 +155,15 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: n(24),
     marginBottom: n(24),
+  },
+  filter: {
+    gap: n(12),
+  },
+  label: {
+    fontSize: n(13),
+    opacity: 0.45,
+    textTransform: "uppercase",
+    letterSpacing: n(1),
   },
   centered: {
     alignItems: "center",
