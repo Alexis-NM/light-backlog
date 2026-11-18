@@ -28,7 +28,6 @@ export default function AddToListScreen() {
   const { invertColors } = useInvertColors();
   const {
     lists,
-    createList,
     createListWithGames,
     addGameToList,
     addGamesToList,
@@ -76,8 +75,8 @@ export default function AddToListScreen() {
       return;
     }
     if (game) {
-      const id = createList(trimmed);
-      addGameToList(id, game);
+      // In one go: a list created here is not in this render's lists yet.
+      createListWithGames(trimmed, [game]);
       setName("");
     }
   };
