@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Game, GameList, SortMode, StoredRatings } from "@/core/game";
@@ -17,6 +18,7 @@ import {
   withoutGames,
   withRatings,
 } from "@/core/lists";
+import { deletedItems, deletedLists } from "@/core/syncClient";
 import {
   loadLists,
   removeAllLists,
@@ -25,11 +27,14 @@ import {
   saveList,
   saveListOrder,
 } from "@/services/listStorage";
+import { recordDeletions } from "@/services/syncStore";
 
 interface ListsContextType {
   addGamesToList: (listId: string, games: Game[]) => void;
   addGameToList: (listId: string, game: Game) => void;
   clearAll: () => void;
+  /** Stores what the sync merged. */
+  commitFromSync: (lists: GameList[]) => void;
   createList: (name: string) => string;
   createListWithGames: (
     name: string,
@@ -38,7 +43,11 @@ interface ListsContextType {
   ) => string;
   deleteList: (id: string) => void;
   getList: (id: string) => GameList | undefined;
+  /** The latest lists, maybe not rendered yet. */
+  getLists: () => GameList[];
   lists: GameList[];
+  /** The saved lists have been read. */
+  loaded: boolean;
   moveList: (id: string, direction: "down" | "up") => void;
   removeGameFromList: (listId: string, gameId: number) => void;
   removeGamesFromList: (listId: string, gameIds: number[]) => void;
@@ -52,7 +61,9 @@ interface ListsContextType {
 
 const ListsContext = createContext<ListsContextType>({
   lists: [],
+  loaded: false,
   getList: () => undefined,
+  getLists: () => [],
   createList: () => "",
   createListWithGames: () => "",
   deleteList: () => undefined,
@@ -63,6 +74,7 @@ const ListsContext = createContext<ListsContextType>({
   removeGamesFromList: () => undefined,
   renameList: () => undefined,
   replaceAll: () => Promise.resolve(),
+  commitFromSync: () => undefined,
   setIgdbRatings: () => undefined,
   setListConsoles: () => undefined,
   setListSort: () => undefined,
@@ -75,21 +87,53 @@ function makeId() {
   return `list_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Writes the lists that changed, removes the ones gone, and keeps the order. */
+function saveChanges(before: GameList[], after: GameList[]) {
+  const previous = new Map(before.map((list) => [list.id, list]));
+  const kept = new Set(after.map((list) => list.id));
+  for (const list of after) {
+    if (previous.get(list.id) !== list) {
+      saveList(list);
+    }
+  }
+  for (const list of before) {
+    if (!kept.has(list.id)) {
+      removeList(list.id);
+    }
+  }
+  saveListOrder(after);
+}
+
 export const ListsProvider = ({ children }: { children: ReactNode }) => {
   // Always in display order.
   const [lists, setLists] = useState<GameList[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  // Changes start from the latest lists, not the rendered ones, so that a
+  // sync and a tap in the same tick cannot undo each other.
+  const latest = useRef(lists);
+
+  const commit = useCallback((next: GameList[]) => {
+    latest.current = next;
+    setLists(next);
+  }, []);
 
   useEffect(() => {
-    loadLists().then(setLists);
-  }, []);
+    loadLists().then((stored) => {
+      commit(stored);
+      setLoaded(true);
+    });
+  }, [commit]);
 
   const getList = useCallback(
     (id: string) => lists.find((list) => list.id === id),
     [lists]
   );
 
+  const getLists = useCallback(() => latest.current, []);
+
   const insertList = useCallback(
     (name: string, games: Game[], consoles?: string[]) => {
+      const current = latest.current;
       const now = Date.now();
       const list = withGames(
         {
@@ -99,34 +143,35 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
           consoles: consoles && consoles.length > 0 ? consoles : undefined,
           createdAt: now,
           updatedAt: now,
-          position: topPosition(lists),
+          position: topPosition(current),
         },
         games,
         now
       );
-      const next = [list, ...lists];
-      setLists(next);
+      const next = [list, ...current];
+      commit(next);
       saveList(list);
       saveListOrder(next);
       return list.id;
     },
-    [lists]
+    [commit]
   );
 
   const updateList = useCallback(
     (id: string, update: (list: GameList) => GameList) => {
-      const current = lists.find((list) => list.id === id);
-      if (!current) {
+      const current = latest.current;
+      const list = current.find((one) => one.id === id);
+      if (!list) {
         return;
       }
-      const updated = update(current);
-      if (updated === current) {
+      const updated = update(list);
+      if (updated === list) {
         return;
       }
-      setLists(lists.map((list) => (list.id === id ? updated : list)));
+      commit(current.map((one) => (one.id === id ? updated : one)));
       saveList(updated);
     },
-    [lists]
+    [commit]
   );
 
   const createList = useCallback(
@@ -168,12 +213,18 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteList = useCallback(
     (id: string) => {
-      const next = lists.filter((list) => list.id !== id);
-      setLists(next);
+      const current = latest.current;
+      const list = current.find((one) => one.id === id);
+      if (!list) {
+        return;
+      }
+      recordDeletions(deletedLists([list], Date.now()));
+      const next = current.filter((one) => one.id !== id);
+      commit(next);
       removeList(id);
       saveListOrder(next);
     },
-    [lists]
+    [commit]
   );
 
   const addGameToList = useCallback(
@@ -190,12 +241,13 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
 
   const moveList = useCallback(
     (id: string, direction: "down" | "up") => {
-      const next = reorderLists(lists, id, direction, Date.now());
-      if (next === lists) {
+      const current = latest.current;
+      const next = reorderLists(current, id, direction, Date.now());
+      if (next === current) {
         return;
       }
-      const unchanged = new Set(lists);
-      setLists(next);
+      const unchanged = new Set(current);
+      commit(next);
       for (const list of next) {
         if (!unchanged.has(list)) {
           saveList(list);
@@ -203,55 +255,78 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       }
       saveListOrder(next);
     },
-    [lists]
-  );
-
-  const removeGameFromList = useCallback(
-    (listId: string, gameId: number) =>
-      updateList(listId, (list) => withoutGames(list, [gameId])),
-    [updateList]
+    [commit]
   );
 
   const removeGamesFromList = useCallback(
-    (listId: string, gameIds: number[]) =>
-      updateList(listId, (list) => withoutGames(list, gameIds)),
+    (listId: string, gameIds: number[]) => {
+      const list = latest.current.find((one) => one.id === listId);
+      if (list) {
+        recordDeletions(deletedItems(list, gameIds, Date.now()));
+      }
+      updateList(listId, (current) => withoutGames(current, gameIds));
+    },
     [updateList]
+  );
+
+  const removeGameFromList = useCallback(
+    (listId: string, gameId: number) => removeGamesFromList(listId, [gameId]),
+    [removeGamesFromList]
   );
 
   const setIgdbRatings = useCallback(
     (ratings: Record<number, StoredRatings>) => {
-      const next = lists.map((list) => withRatings(list, ratings));
-      const changed = next.filter((list, index) => list !== lists[index]);
+      const current = latest.current;
+      const next = current.map((list) => withRatings(list, ratings));
+      const changed = next.filter((list, index) => list !== current[index]);
       if (changed.length === 0) {
         return;
       }
-      setLists(next);
+      commit(next);
       for (const list of changed) {
         saveList(list);
       }
     },
-    [lists]
+    [commit]
   );
 
   const clearAll = useCallback(() => {
-    setLists([]);
-    removeAllLists(lists);
-  }, [lists]);
+    const current = latest.current;
+    recordDeletions(deletedLists(current, Date.now()));
+    commit([]);
+    removeAllLists(current);
+  }, [commit]);
 
+  // A restore turns sync off first: it records no deletion.
   const replaceAll = useCallback(
     async (restored: GameList[]) => {
+      const current = latest.current;
       const next = sortLists(restored);
-      setLists(next);
-      await removeAllLists(lists);
+      commit(next);
+      await removeAllLists(current);
       await saveAllLists(next);
     },
-    [lists]
+    [commit]
+  );
+
+  const commitFromSync = useCallback(
+    (next: GameList[]) => {
+      const current = latest.current;
+      if (next === current) {
+        return;
+      }
+      commit(next);
+      saveChanges(current, next);
+    },
+    [commit]
   );
 
   const value = useMemo(
     () => ({
       lists,
+      loaded,
       getList,
+      getLists,
       createList,
       createListWithGames,
       deleteList,
@@ -262,6 +337,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       removeGamesFromList,
       renameList,
       replaceAll,
+      commitFromSync,
       setIgdbRatings,
       setListConsoles,
       setListSort,
@@ -269,7 +345,9 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     }),
     [
       lists,
+      loaded,
       getList,
+      getLists,
       createList,
       createListWithGames,
       setIgdbRatings,
@@ -283,6 +361,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       removeGamesFromList,
       renameList,
       replaceAll,
+      commitFromSync,
       clearAll,
     ]
   );

@@ -7,6 +7,7 @@ import { ToggleSwitch } from "@/components/ToggleSwitch";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSync } from "@/contexts/SyncContext";
 import { type Backup, BackupError } from "@/core/backup";
 import { useBackup } from "@/hooks/useBackup";
 import { readBackupFile, writeBackupFile } from "@/services/backupFile";
@@ -17,6 +18,7 @@ export default function BackupScreen() {
   const confirm = useConfirm();
   const { hasCredentials } = useCredentials();
   const { buildBackup, restoreBackup } = useBackup();
+  const { disconnect, serverAddress } = useSync();
   const [includeCredentials, setIncludeCredentials] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -49,6 +51,10 @@ export default function BackupScreen() {
   const applyBackup = async (backup: Backup) => {
     setBusy(true);
     try {
+      // A restore replaces everything: synced, it would mix with the server.
+      if (serverAddress) {
+        await disconnect();
+      }
       await restoreBackup(backup);
       setMessage(t("backup_restore_done"));
     } catch {
@@ -66,10 +72,15 @@ export default function BackupScreen() {
       const games = Object.keys(backup.library).length;
       confirm({
         title: t("backup_import"),
-        message: t("backup_restore_confirm", {
-          games,
-          lists: backup.lists.length,
-        }),
+        message: t(
+          serverAddress
+            ? "backup_restore_confirm_synced"
+            : "backup_restore_confirm",
+          {
+            games,
+            lists: backup.lists.length,
+          }
+        ),
         confirmText: t("backup_restore"),
         onConfirm: () => {
           applyBackup(backup);

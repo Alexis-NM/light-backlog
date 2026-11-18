@@ -53,6 +53,8 @@ Built on top of [light-template](https://github.com/vandamd/light-template)
   ends with the titles that were not found or are worth a check.
 - **Backup** — export everything (library, lists, settings) to a single JSON
   file from Settings, and restore it on any device.
+- **Sync (optional)** — keep the same library and lists on several devices
+  through your own server (see [Sync](#sync)). Off by default.
 - **Bilingual** — English / French, switchable in Settings (defaults to the
   device language).
 - Covers and screenshots are shown in colour; everything else stays minimal
@@ -70,10 +72,34 @@ Search and browsing need free IGDB credentials (a Twitch application):
 
 Credentials are stored on-device with `expo-secure-store` and never leave it.
 Your library and lists are stored locally (`AsyncStorage`) and work offline.
+They stay on the device unless you set up a sync server.
 
 > French descriptions are produced by machine-translating the (English-only)
 > IGDB summary through a free, keyless service — the summary text is sent to
 > that service for translation. It falls back to English if unavailable.
+
+## Sync
+
+Sync is off by default, and there is no public server: without one, the app
+makes no sync request. To keep the same library and lists on several devices,
+point the app at a server of your own in **Settings → Sync**: its HTTPS
+address and its token. The token is stored with `expo-secure-store`.
+
+- The app syncs when it opens, when it comes back to the foreground, and
+  with **Sync now**. Offline, changes wait for the next sync.
+- The library and the lists sync, with their sort, consoles and order. The
+  other settings stay on each device.
+- For each game, list or game in a list, the most recent change wins, so
+  devices need their clock on time.
+- Before the first sync, the app keeps a copy of its data, which **Restore the
+  copy** puts back (turning sync off).
+- **Disconnect** turns sync off: the data stays on the phone. Restoring a
+  backup also turns sync off.
+
+The protocol (one `POST /api/sync`, a bearer token and a version number) is
+described by its types and checks in [`core/sync.ts`](core/sync.ts), and the
+app's side in [`core/syncClient.ts`](core/syncClient.ts). It is made for one
+server and comes with no promise of stability for others.
 
 ## Install (APK)
 

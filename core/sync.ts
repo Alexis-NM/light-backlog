@@ -190,7 +190,7 @@ const isStars = (value: unknown) =>
   value <= 5 &&
   Number.isInteger(value * 2);
 
-const isEntry = (value: unknown): value is SyncEntry =>
+export const isSyncEntry = (value: unknown): value is SyncEntry =>
   isRecord(value) &&
   isGame(value.game) &&
   GAME_STATUSES.includes(value.status as GameStatus) &&
@@ -199,7 +199,7 @@ const isEntry = (value: unknown): value is SyncEntry =>
   isTime(value.addedAt) &&
   isDated(value);
 
-const isList = (value: unknown): value is SyncList =>
+export const isSyncList = (value: unknown): value is SyncList =>
   isRecord(value) &&
   isId(value.id) &&
   isText(value.name) &&
@@ -210,7 +210,7 @@ const isList = (value: unknown): value is SyncList =>
   isTime(value.createdAt) &&
   isDated(value);
 
-const isItem = (value: unknown): value is SyncItem =>
+export const isSyncItem = (value: unknown): value is SyncItem =>
   isRecord(value) &&
   isId(value.listId) &&
   isGame(value.game) &&
@@ -252,9 +252,9 @@ function parseChanges(value: unknown): SyncChanges {
     throw new SyncError("invalid", "changes is missing.");
   }
   return {
-    entries: parseElements(value.entries, "entries", isEntry, entryKey),
-    lists: parseElements(value.lists, "lists", isList, listKey),
-    items: parseElements(value.items, "items", isItem, itemKey),
+    entries: parseElements(value.entries, "entries", isSyncEntry, entryKey),
+    lists: parseElements(value.lists, "lists", isSyncList, listKey),
+    items: parseElements(value.items, "items", isSyncItem, itemKey),
   };
 }
 

@@ -18,11 +18,11 @@ Expo template with pre-built components and patterns.
 - `bun run test:import` - Live check of the list-import matcher against IGDB (needs `IGDB_CLIENT_ID` / `IGDB_CLIENT_SECRET`)
 
 ## Pure logic (`core/`)
-`core/` holds what needs neither React Native nor Expo: data types, IGDB client, list import, backup format and validation, translations, consoles, sort orders, and the sync protocol (`sync.ts`: types, validation, most-recent-change rule). It is also read from outside this app.
+`core/` holds what needs neither React Native nor Expo: data types, IGDB client, list import, backup format and validation, translations, consoles, sort orders, the sync protocol (`sync.ts`: types, validation, most-recent-change rule) and the app's side of it (`syncClient.ts`: what to send, batches, merge, HTTP). It is also read from outside this app.
 - Plain TypeScript: no package import, not even React.
 - Relative imports between core files, never `@/` (the alias means something else outside this app). The app imports core as `@/core/...`.
 - `bun run check` enforces both rules (override in `biome.jsonc`).
-- Device code stays out of core: storage, secure store, file pickers (`services/listStorage.ts`, `services/backupFile.ts`, `contexts/`).
+- Device code stays out of core: storage, secure store, file pickers (`services/listStorage.ts`, `services/backupFile.ts`, `contexts/`). For sync, `services/syncStore.ts` keeps the cursor, the versions the server has and the deletion markers (recorded only while sync is on), and `contexts/SyncContext.tsx` holds the server, the triggers and the status.
 
 ## Setup
 Update `app.json`:

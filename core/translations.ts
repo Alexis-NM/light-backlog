@@ -104,11 +104,18 @@ const en = {
   settings_clear_library: "Clear Library",
   settings_clear_library_confirm:
     "Delete every game and list? This cannot be undone.",
+  settings_clear_library_confirm_synced:
+    "Delete every game and list, here and on the sync server? This cannot be undone.",
   settings_creds_set: "Configured",
   settings_creds_not_set: "Not set",
   settings_sort_library: "Library sort",
   settings_sort_lists: "List sort",
   settings_backup: "Backup",
+  settings_sync: "Sync",
+  settings_sync_off: "Off",
+  settings_sync_on: "On",
+  settings_sync_error: "Error",
+  settings_sync_offline: "Offline",
 
   // Backup
   backup_title: "Backup",
@@ -123,9 +130,46 @@ const en = {
   backup_invalid: "This file is not a Backlog backup.",
   backup_restore_confirm:
     "Replace everything with this backup ({games} games, {lists} lists)? Current data will be lost.",
+  backup_restore_confirm_synced:
+    "Replace everything with this backup ({games} games, {lists} lists)? Current data will be lost, and sync will be turned off.",
   backup_restore: "Restore",
   backup_restore_done: "Backup restored.",
   backup_restore_error: "Could not restore the backup.",
+
+  // Sync
+  sync_title: "Sync",
+  sync_intro:
+    "Keep the same library and lists on several devices, through your own server. Without one, everything stays on this phone: there is no public server.",
+  sync_address: "Server address",
+  sync_address_ph: "https://…",
+  sync_token: "Token",
+  sync_token_ph: "Server token",
+  sync_missing: "Enter the server address and the token.",
+  sync_check: "Check the connection",
+  sync_checking: "Checking…",
+  sync_check_ok: "Connection OK.",
+  sync_connect: "Connect",
+  sync_connecting: "Connecting…",
+  sync_connected_to: "Connected to {address}",
+  sync_now: "Sync now",
+  sync_syncing: "Syncing…",
+  sync_last: "Last sync: {date}",
+  sync_never: "Not synced yet.",
+  sync_skipped: "{count} invalid items were not sent.",
+  sync_disconnect: "Disconnect",
+  sync_disconnect_confirm:
+    "Stop syncing? Your library and lists stay on this phone.",
+  sync_copy_restore: "Restore the copy",
+  sync_copy_restore_confirm:
+    "Replace everything with the copy made before the first sync? Sync will be turned off.",
+  sync_copy_restored: "Copy restored.",
+  sync_err_address: "The address must start with https://",
+  sync_err_network: "Server unreachable. Changes will wait for the next sync.",
+  sync_err_token: "The server refused the token.",
+  sync_err_version: "The server expects another version of the app: update it.",
+  sync_err_rejected: "The server refused the data.",
+  sync_err_server: "The server returned an error.",
+  sync_err_copy: "Could not save a copy of the data: nothing was sent.",
 
   // Sorting
   sort_alpha: "A-Z",
@@ -273,11 +317,18 @@ const fr: Record<TranslationKey, string> = {
   settings_clear_library: "Vider la bibliothèque",
   settings_clear_library_confirm:
     "Supprimer tous les jeux et listes ? Action irréversible.",
+  settings_clear_library_confirm_synced:
+    "Supprimer tous les jeux et listes, ici et sur le serveur de synchro ? Action irréversible.",
   settings_creds_set: "Configurés",
   settings_creds_not_set: "Non définis",
   settings_sort_library: "Tri biblio",
   settings_sort_lists: "Tri listes",
   settings_backup: "Sauvegarde",
+  settings_sync: "Synchronisation",
+  settings_sync_off: "Désactivée",
+  settings_sync_on: "Activée",
+  settings_sync_error: "Erreur",
+  settings_sync_offline: "Hors ligne",
 
   // Backup
   backup_title: "Sauvegarde",
@@ -292,9 +343,49 @@ const fr: Record<TranslationKey, string> = {
   backup_invalid: "Ce fichier n'est pas une sauvegarde Backlog.",
   backup_restore_confirm:
     "Tout remplacer par cette sauvegarde ({games} jeux, {lists} listes) ? Les données actuelles seront perdues.",
+  backup_restore_confirm_synced:
+    "Tout remplacer par cette sauvegarde ({games} jeux, {lists} listes) ? Les données actuelles seront perdues, et la synchro sera coupée.",
   backup_restore: "Restaurer",
   backup_restore_done: "Sauvegarde restaurée.",
   backup_restore_error: "Impossible de restaurer la sauvegarde.",
+
+  // Sync
+  sync_title: "Synchronisation",
+  sync_intro:
+    "Garde la même bibliothèque et les mêmes listes sur plusieurs appareils, à travers ton propre serveur. Sans serveur, tout reste sur ce téléphone : il n'existe pas de serveur public.",
+  sync_address: "Adresse du serveur",
+  sync_address_ph: "https://…",
+  sync_token: "Jeton",
+  sync_token_ph: "Jeton du serveur",
+  sync_missing: "Saisis l'adresse du serveur et le jeton.",
+  sync_check: "Vérifier la connexion",
+  sync_checking: "Vérification…",
+  sync_check_ok: "Connexion réussie.",
+  sync_connect: "Connecter",
+  sync_connecting: "Connexion…",
+  sync_connected_to: "Connecté à {address}",
+  sync_now: "Synchroniser",
+  sync_syncing: "Synchronisation…",
+  sync_last: "Dernière synchro : {date}",
+  sync_never: "Pas encore synchronisé.",
+  sync_skipped: "{count} éléments invalides n'ont pas été envoyés.",
+  sync_disconnect: "Déconnecter",
+  sync_disconnect_confirm:
+    "Arrêter la synchro ? Ta bibliothèque et tes listes restent sur ce téléphone.",
+  sync_copy_restore: "Restaurer la copie",
+  sync_copy_restore_confirm:
+    "Tout remplacer par la copie faite avant la première synchro ? La synchro sera coupée.",
+  sync_copy_restored: "Copie restaurée.",
+  sync_err_address: "L'adresse doit commencer par https://",
+  sync_err_network:
+    "Serveur injoignable. Les changements attendront la prochaine synchro.",
+  sync_err_token: "Le serveur refuse le jeton.",
+  sync_err_version:
+    "Le serveur attend une autre version de l'appli : mets-la à jour.",
+  sync_err_rejected: "Le serveur a refusé les données.",
+  sync_err_server: "Le serveur a renvoyé une erreur.",
+  sync_err_copy:
+    "Impossible d'enregistrer une copie des données : rien n'a été envoyé.",
 
   // Sorting
   sort_alpha: "A-Z",

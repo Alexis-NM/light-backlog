@@ -13,6 +13,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { LibraryProvider } from "@/contexts/LibraryContext";
 import { ListsProvider } from "@/contexts/ListsContext";
 import { SortProvider } from "@/contexts/SortContext";
+import { SyncProvider } from "@/contexts/SyncContext";
 import { useIgdbRatingsBackfill } from "@/hooks/useIgdbRatings";
 
 function RootLayout() {
@@ -43,10 +44,12 @@ export default function App() {
                 <BrowseProvider>
                   <FullscreenProvider>
                     <SortProvider>
-                      <ConfirmProvider>
-                        <StatusBar hidden />
-                        <RootLayout />
-                      </ConfirmProvider>
+                      <SyncProvider>
+                        <ConfirmProvider>
+                          <StatusBar hidden />
+                          <RootLayout />
+                        </ConfirmProvider>
+                      </SyncProvider>
                     </SortProvider>
                   </FullscreenProvider>
                 </BrowseProvider>
