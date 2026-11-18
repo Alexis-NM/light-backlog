@@ -8,7 +8,6 @@ import {
   useEffect,
   useEffectEvent,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { AppState } from "react-native";
@@ -25,16 +24,21 @@ import {
   syncEndpoint,
   syncOnce,
 } from "@/core/syncClient";
+import { createSyncRunner } from "@/core/syncRunner";
 import { useBackup } from "@/hooks/useBackup";
 import {
   getSyncState,
   setSyncState,
   syncStateLoaded,
+  watchLocalChanges,
 } from "@/services/syncStore";
 
 const ENDPOINT_KEY = "sync_endpoint";
 const TOKEN_KEY = "sync_token";
 const API_PATH = /\/api\/sync$/;
+
+/** How long the changes must stop before the sync that sends them. */
+const CHANGE_DELAY_MS = 3000;
 
 // Written at the first connection, in case the first merge is not what was
 // expected. It stays in the app's own storage.
@@ -116,8 +120,7 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
   const [serverLoaded, setServerLoaded] = useState(false);
   const [status, setStatus] = useState<SyncStatus>(OFF);
   const [hasCopy, setHasCopy] = useState(() => copyFile().exists);
-  const running = useRef(false);
-  const again = useRef(false);
+  const [runner] = useState(() => createSyncRunner(CHANGE_DELAY_MS));
 
   useEffect(() => {
     Promise.all([
@@ -143,42 +146,34 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
       .finally(() => setServerLoaded(true));
   }, []);
 
-  const run = useCallback(
+  /** One sync, whose outcome goes into the status. The runner starts it. */
+  const syncWith = useCallback(
     async (target: Server) => {
-      // A sync asked for meanwhile runs right after this one.
-      if (running.current) {
-        again.current = true;
-        return;
-      }
-      running.current = true;
       setStatus((current) => ({
         ...current,
         phase: "syncing",
         problem: undefined,
       }));
-      let skipped = 0;
       try {
-        do {
-          again.current = false;
-          const result = await syncOnce({
-            getLocal: () => ({ library: getEntries(), lists: getLists() }),
-            getState: getSyncState,
-            commit: (local, state) => {
-              commitLibrary(local.library);
-              commitLists(local.lists);
-              setSyncState(state);
-            },
-            post: createTransport(target.endpoint, target.token),
-          });
-          skipped = result.skipped;
-        } while (again.current);
+        const { skipped } = await syncOnce({
+          getLocal: () => ({ library: getEntries(), lists: getLists() }),
+          getState: getSyncState,
+          commit: (local, state) => {
+            commitLibrary(local.library);
+            commitLists(local.lists);
+            setSyncState(state);
+          },
+          post: createTransport(target.endpoint, target.token),
+        });
         setStatus(settledStatus({ phase: "idle", skipped }));
       } catch (error) {
         setStatus(
-          settledStatus({ phase: "error", problem: problemOf(error), skipped })
+          settledStatus({
+            phase: "error",
+            problem: problemOf(error),
+            skipped: 0,
+          })
         );
-      } finally {
-        running.current = false;
       }
     },
     [commitLibrary, commitLists, getEntries, getLists]
@@ -186,15 +181,22 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
 
   const syncNow = useCallback(async () => {
     if (server) {
-      await run(server);
+      await runner.now(() => syncWith(server));
     }
-  }, [run, server]);
+  }, [runner, server, syncWith]);
 
-  // When the app opens, once its data is read, and each time it comes back
-  // to the foreground. Without a server, nothing goes out.
+  // When the app opens, once its data is read, each time it comes back to
+  // the foreground, and a moment after the user changes the library or the
+  // lists: a burst of changes makes one sync, sent at once if the app leaves
+  // the foreground. Without a server, nothing goes out.
   const ready = serverLoaded && libraryLoaded && listsLoaded;
   const onActive = useEffectEvent(() => {
     syncNow();
+  });
+  const onLocalChange = useEffectEvent(() => {
+    if (server) {
+      runner.soon(() => syncWith(server));
+    }
   });
   useEffect(() => {
     if (!ready) {
@@ -204,10 +206,17 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         onActive();
+      } else {
+        runner.flush();
       }
     });
-    return () => subscription.remove();
-  }, [ready]);
+    const stopWatching = watchLocalChanges(() => onLocalChange());
+    return () => {
+      subscription.remove();
+      stopWatching();
+      runner.cancel();
+    };
+  }, [ready, runner]);
 
   const check = useCallback(async (address: string, token: string) => {
     const endpoint = syncEndpoint(address);
@@ -247,12 +256,13 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
       await setItemAsync(TOKEN_KEY, target.token);
       await setSyncState(newSyncState());
       setServer(target);
-      await run(target);
+      await runner.now(() => syncWith(target));
     },
-    [buildBackup, getEntries, getLists, run]
+    [buildBackup, getEntries, getLists, runner, syncWith]
   );
 
   const disconnect = useCallback(async () => {
+    runner.cancel();
     await setSyncState(null);
     await Promise.all([
       deleteItemAsync(ENDPOINT_KEY),
@@ -260,7 +270,7 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
     ]);
     setServer(null);
     setStatus(OFF);
-  }, []);
+  }, [runner]);
 
   const restoreCopy = useCallback(async () => {
     const backup = parseBackup(await copyFile().text());

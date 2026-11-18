@@ -608,6 +608,28 @@ describe("syncOnce", () => {
     expect(result.received).toBe(0);
   });
 
+  test("offline, the changes wait for the next sync", async () => {
+    const server = fakeServer();
+    const phone = device(sample());
+    const before = phone.state;
+    const offline: SyncTransport = () =>
+      Promise.reject(new SyncFailure("network", "Offline."));
+    await expect(
+      syncOnce({
+        getLocal: () => phone.local,
+        getState: () => phone.state,
+        commit: () => {
+          throw new Error("Nothing to commit.");
+        },
+        post: offline,
+      })
+    ).rejects.toThrow("Offline.");
+    expect(phone.state).toBe(before);
+
+    const next = await sync(phone, server);
+    expect(next.sent).toBe(6);
+  });
+
   test("fails rather than loop when the server does not move its cursor", async () => {
     const phone = device();
     const stuck: SyncTransport = (request) =>

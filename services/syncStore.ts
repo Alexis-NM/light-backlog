@@ -5,7 +5,8 @@ import { addTombstones, type SyncState } from "@/core/syncClient";
 
 // The sync state lives here, outside React: the library and the lists record
 // their deletions in it, and the sync reads and writes it. While sync is off
-// there is none, and a deletion leaves no trace.
+// there is none, and a deletion leaves no trace. The library and the lists
+// also say here when the user changes them, for the sync to follow.
 
 const KEY = "sync:state";
 
@@ -13,6 +14,7 @@ let state: SyncState | null = null;
 let loaded = false;
 const onLoad: (() => void)[] = [];
 let writing: Promise<void> = Promise.resolve();
+const changeListeners = new Set<() => void>();
 
 const isState = (value: unknown): value is SyncState =>
   isRecord(value) &&
@@ -70,5 +72,22 @@ export function recordDeletions(deleted: Partial<SyncChanges>) {
     record();
   } else {
     onLoad.push(record);
+  }
+}
+
+/** For the sync, to hear about the user's changes. Returns what stops it. */
+export function watchLocalChanges(listener: () => void): () => void {
+  changeListeners.add(listener);
+  return () => {
+    changeListeners.delete(listener);
+  };
+}
+
+/** Called after each change the user makes to the library or the lists, for the sync to send it. Does nothing while sync is off. */
+export function notifyLocalChange() {
+  if (state) {
+    for (const listener of changeListeners) {
+      listener();
+    }
   }
 }

@@ -15,7 +15,7 @@ import {
 } from "@/core/game";
 import { deletedEntries } from "@/core/syncClient";
 import { usePersistedState } from "@/hooks/usePersistedState";
-import { recordDeletions } from "@/services/syncStore";
+import { notifyLocalChange, recordDeletions } from "@/services/syncStore";
 
 type Entries = Record<number, LibraryEntry>;
 
@@ -70,6 +70,15 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
   // Changes start from the latest entries, not the rendered ones, so that a
   // sync and a tap in the same tick cannot undo each other.
 
+  /** A change the user makes: the sync sends it a moment later. */
+  const change = useCallback(
+    (next: Entries) => {
+      setEntries(next);
+      notifyLocalChange();
+    },
+    [setEntries]
+  );
+
   const upsert = useCallback(
     (game: Game, patch: Partial<LibraryEntry>) => {
       const current = getLatest();
@@ -84,9 +93,9 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: now,
         ...patch,
       };
-      setEntries({ ...current, [game.id]: next });
+      change({ ...current, [game.id]: next });
     },
-    [getLatest, setEntries]
+    [change, getLatest]
   );
 
   const setStatus = useCallback(
@@ -143,9 +152,9 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
           updatedAt: now,
         };
       }
-      setEntries(next);
+      change(next);
     },
-    [getLatest, setEntries]
+    [change, getLatest]
   );
 
   const removeMany = useCallback(
@@ -162,9 +171,9 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       for (const entry of removed) {
         delete next[entry.game.id];
       }
-      setEntries(next);
+      change(next);
     },
-    [getLatest, setEntries]
+    [change, getLatest]
   );
 
   const removeEntry = useCallback(
@@ -182,9 +191,9 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
           next[id] = { ...existing, status, updatedAt: now };
         }
       }
-      setEntries(next);
+      change(next);
     },
-    [getLatest, setEntries]
+    [change, getLatest]
   );
 
   const setIgdbRatings = useCallback(
@@ -210,8 +219,8 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
 
   const clearAll = useCallback(() => {
     recordDeletions(deletedEntries(Object.values(getLatest()), Date.now()));
-    setEntries({});
-  }, [getLatest, setEntries]);
+    change({});
+  }, [change, getLatest]);
 
   // A restore turns sync off first: it records no deletion.
   const replaceAll = useCallback(

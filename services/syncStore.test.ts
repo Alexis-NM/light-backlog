@@ -18,8 +18,14 @@ mock.module("@react-native-async-storage/async-storage", () => ({
   },
 }));
 
-const { getSyncState, recordDeletions, setSyncState, syncStateLoaded } =
-  await import("./syncStore");
+const {
+  getSyncState,
+  notifyLocalChange,
+  recordDeletions,
+  setSyncState,
+  syncStateLoaded,
+  watchLocalChanges,
+} = await import("./syncStore");
 
 const entry: LibraryEntry = {
   game: { id: 1, name: "Zelda" },
@@ -51,4 +57,20 @@ test("records deletions while sync is on, and saves them", async () => {
 test("turning sync off forgets them", async () => {
   await setSyncState(null);
   expect(stored.has("sync:state")).toBe(false);
+});
+
+test("tells the sync about the user's changes only while sync is on", async () => {
+  let heard = 0;
+  const stop = watchLocalChanges(() => {
+    heard += 1;
+  });
+  notifyLocalChange();
+  expect(heard).toBe(0);
+  await setSyncState(newSyncState());
+  notifyLocalChange();
+  expect(heard).toBe(1);
+  stop();
+  notifyLocalChange();
+  expect(heard).toBe(1);
+  await setSyncState(null);
 });

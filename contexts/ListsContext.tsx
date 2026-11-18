@@ -27,7 +27,7 @@ import {
   saveList,
   saveListOrder,
 } from "@/services/listStorage";
-import { recordDeletions } from "@/services/syncStore";
+import { notifyLocalChange, recordDeletions } from "@/services/syncStore";
 
 interface ListsContextType {
   addGamesToList: (listId: string, games: Game[]) => void;
@@ -117,6 +117,15 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     setLists(next);
   }, []);
 
+  /** A change the user makes: the sync sends it a moment later. */
+  const change = useCallback(
+    (next: GameList[]) => {
+      commit(next);
+      notifyLocalChange();
+    },
+    [commit]
+  );
+
   useEffect(() => {
     loadLists().then((stored) => {
       commit(stored);
@@ -149,12 +158,12 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
         now
       );
       const next = [list, ...current];
-      commit(next);
+      change(next);
       saveList(list);
       saveListOrder(next);
       return list.id;
     },
-    [commit]
+    [change]
   );
 
   const updateList = useCallback(
@@ -168,10 +177,10 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       if (updated === list) {
         return;
       }
-      commit(current.map((one) => (one.id === id ? updated : one)));
+      change(current.map((one) => (one.id === id ? updated : one)));
       saveList(updated);
     },
-    [commit]
+    [change]
   );
 
   const createList = useCallback(
@@ -220,11 +229,11 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       }
       recordDeletions(deletedLists([list], Date.now()));
       const next = current.filter((one) => one.id !== id);
-      commit(next);
+      change(next);
       removeList(id);
       saveListOrder(next);
     },
-    [commit]
+    [change]
   );
 
   const addGameToList = useCallback(
@@ -247,7 +256,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const unchanged = new Set(current);
-      commit(next);
+      change(next);
       for (const list of next) {
         if (!unchanged.has(list)) {
           saveList(list);
@@ -255,7 +264,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       }
       saveListOrder(next);
     },
-    [commit]
+    [change]
   );
 
   const removeGamesFromList = useCallback(
@@ -293,9 +302,9 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
   const clearAll = useCallback(() => {
     const current = latest.current;
     recordDeletions(deletedLists(current, Date.now()));
-    commit([]);
+    change([]);
     removeAllLists(current);
-  }, [commit]);
+  }, [change]);
 
   // A restore turns sync off first: it records no deletion.
   const replaceAll = useCallback(
