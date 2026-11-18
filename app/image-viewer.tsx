@@ -5,7 +5,7 @@ import {
   OrientationLock,
   unlockAsync,
 } from "expo-screen-orientation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Image,
@@ -45,8 +45,13 @@ export default function ImageViewerScreen() {
   const [index, setIndex] = useState(initialIndex);
   const [controls, setControls] = useState(true);
   const listRef = useRef<FlatList<string>>(null);
-  const indexRef = useRef(initialIndex);
-  indexRef.current = index;
+
+  const alignToIndex = useEffectEvent((pageWidth: number) => {
+    listRef.current?.scrollToOffset({
+      offset: index * pageWidth,
+      animated: false,
+    });
+  });
 
   useEffect(() => {
     unlockAsync().catch(() => {
@@ -61,10 +66,7 @@ export default function ImageViewerScreen() {
 
   // Keep the current image aligned after a rotation changes the page width.
   useEffect(() => {
-    listRef.current?.scrollToOffset({
-      offset: indexRef.current * width,
-      animated: false,
-    });
+    alignToIndex(width);
   }, [width]);
 
   if (images.length === 0) {

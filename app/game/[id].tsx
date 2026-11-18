@@ -42,21 +42,25 @@ export default function GameDetailScreen() {
     }
   }, [params.game]);
 
-  const [details, setDetails] = useState<GameDetails | null>(null);
-  const [translatedSummary, setTranslatedSummary] = useState<string | null>(
-    null
-  );
+  // Each answer is kept with what it answers, so a stale one never shows.
+  const [loaded, setLoaded] = useState<{
+    details: GameDetails;
+    gameId: number;
+  } | null>(null);
+  const [translation, setTranslation] = useState<{
+    source: string;
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!(parsedGame && auth)) {
       return;
     }
     let active = true;
-    setDetails(null);
     getGameDetails(parsedGame.id, auth)
-      .then((loaded) => {
+      .then((details) => {
         if (active) {
-          setDetails(loaded);
+          setLoaded({ details, gameId: parsedGame.id });
         }
       })
       .catch(() => {
@@ -67,22 +71,24 @@ export default function GameDetailScreen() {
     };
   }, [parsedGame, auth]);
 
+  const details =
+    loaded && loaded.gameId === parsedGame?.id ? loaded.details : null;
+  const summary = details?.summary;
+
   useEffect(() => {
-    const summary = details?.summary;
     if (language !== "fr" || !summary) {
-      setTranslatedSummary(null);
       return;
     }
     let active = true;
-    translateText(summary, "fr").then((translated) => {
-      if (active && translated) {
-        setTranslatedSummary(translated);
+    translateText(summary, "fr").then((text) => {
+      if (active && text) {
+        setTranslation({ source: summary, text });
       }
     });
     return () => {
       active = false;
     };
-  }, [language, details?.summary]);
+  }, [language, summary]);
 
   if (!parsedGame) {
     return <ContentContainer headerTitle=" " />;
@@ -102,10 +108,10 @@ export default function GameDetailScreen() {
     ])
   );
 
-  let summaryText = details?.summary;
-  if (summaryText && language === "fr" && translatedSummary) {
-    summaryText = translatedSummary;
-  }
+  const summaryText =
+    language === "fr" && summary && translation?.source === summary
+      ? translation.text
+      : summary;
 
   // Ratings stored on the game show at once; the detail request refreshes
   // them. A game IGDB has not rated (null) shows no block at all.

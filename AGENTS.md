@@ -132,26 +132,16 @@ Use `SelectorButton` + `OptionsSelector` for option pickers:
 ```
 
 ## Confirmation Screen
-For destructive actions, use the confirm screen pattern:
+For destructive actions, ask with `useConfirm`. The confirm screen runs `onConfirm` from its button's press handler, so no Effect is needed:
 ```tsx
-router.push({
-    pathname: "/confirm",
-    params: {
-        title: "Clear Cache",
-        message: "Are you sure?",
-        confirmText: "Clear",
-        action: "clearCache",
-        returnPath: "/(tabs)/settings",
-    },
-});
+const confirm = useConfirm();
 
-// Handle confirmation in useEffect
-useEffect(() => {
-    if (params.confirmed === "true" && params.action === "clearCache") {
-        router.setParams({ confirmed: undefined, action: undefined });
-        // Do the action
-    }
-}, [params.confirmed, params.action]);
+confirm({
+  title: t("delete"),
+  message: t("list_delete_confirm"),
+  confirmText: t("delete"),
+  onConfirm: () => deleteList(id),
+});
 ```
 
 ## Contexts

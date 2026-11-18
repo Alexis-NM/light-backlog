@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { type Game, hasRatings } from "@/core/game";
+import { type Game, hasRatings, type StoredRatings } from "@/core/game";
 import { fetchRatings } from "@/core/igdb";
 
 /**
@@ -17,12 +17,14 @@ export function useIgdbRatingsBackfill() {
   const lists = useLists();
 
   const requested = useRef(new Set<number>());
-  // Results arrive later; apply them through the setters of the latest render
-  // so a game added meanwhile is not overwritten by a stale snapshot.
-  const latest = useRef({ library, lists });
-  useEffect(() => {
-    latest.current = { library, lists };
-  });
+  // Results arrive later; an Effect Event applies them through the setters of
+  // the latest render, so a game added meanwhile is not overwritten.
+  const applyRatings = useEffectEvent(
+    (ratings: Record<number, StoredRatings>) => {
+      library.setIgdbRatings(ratings);
+      lists.setIgdbRatings(ratings);
+    }
+  );
 
   const { entries } = library;
   const { lists: allLists } = lists;
@@ -50,10 +52,7 @@ export function useIgdbRatingsBackfill() {
       return;
     }
     fetchRatings(missing, auth)
-      .then((ratings) => {
-        latest.current.library.setIgdbRatings(ratings);
-        latest.current.lists.setIgdbRatings(ratings);
-      })
+      .then((ratings) => applyRatings(ratings))
       .catch(() => {
         for (const id of missing) {
           requested.current.delete(id);
