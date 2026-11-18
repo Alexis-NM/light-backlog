@@ -388,7 +388,29 @@ export async function searchGamesBatch(
 }
 
 // IGDB's maximum `limit` per request.
-const RATINGS_CHUNK = 500;
+const IDS_PER_QUERY = 500;
+
+/**
+ * Runs `<fields> where id = (…)` on the games endpoint, 500 ids per request
+ * paced under the rate limit, and puts the answers together.
+ */
+async function queryByIds<T>(
+  ids: readonly number[],
+  fields: string,
+  access: IgdbAccess
+): Promise<T[]> {
+  const results: T[] = [];
+  for (let start = 0; start < ids.length; start += IDS_PER_QUERY) {
+    if (start > 0) {
+      await wait(SEARCH_SPACING_MS);
+    }
+    const chunk = ids.slice(start, start + IDS_PER_QUERY);
+    const body = `${fields} where id = (${chunk.join(",")}); limit ${IDS_PER_QUERY};`;
+    const raw = await apicalypse<T>("games", body, access);
+    results.push(...raw);
+  }
+  return results;
+}
 
 const NO_RATINGS: StoredRatings = {
   igdbRating: null,
@@ -408,22 +430,27 @@ export async function fetchRatings(
   for (const id of ids) {
     out[id] = NO_RATINGS;
   }
-  for (let start = 0; start < ids.length; start += RATINGS_CHUNK) {
-    if (start > 0) {
-      await wait(SEARCH_SPACING_MS);
-    }
-    const chunk = ids.slice(start, start + RATINGS_CHUNK);
-    const body = `fields ${RATING_FIELDS}; where id = (${chunk.join(",")}); limit ${RATINGS_CHUNK};`;
-    const raw = await apicalypse<RawRatings & { id: number }>(
-      "games",
-      body,
-      access
-    );
-    for (const game of raw) {
-      out[game.id] = storedRatings(game);
-    }
+  const raw = await queryByIds<RawRatings & { id: number }>(
+    ids,
+    `fields ${RATING_FIELDS};`,
+    access
+  );
+  for (const game of raw) {
+    out[game.id] = storedRatings(game);
   }
   return out;
+}
+
+/**
+ * The games IGDB knows among these ids, in no particular order, fetched in
+ * chunks of 500 and converted like search results.
+ */
+export async function gamesById(
+  ids: readonly number[],
+  access: IgdbAccess
+): Promise<Game[]> {
+  const raw = await queryByIds<RawGame>(ids, GAME_FIELDS, access);
+  return raw.map(mapGame);
 }
 
 export const PLATFORM_PAGE_SIZE = 30;

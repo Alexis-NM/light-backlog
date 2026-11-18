@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   fetchRatings,
+  gamesById,
   gamesByPlatform,
   getGameDetails,
   type IgdbAuth,
@@ -201,5 +202,52 @@ describe("both accesses", () => {
       "https://images.igdb.com/igdb/image/upload/t_screenshot_big/sc1.jpg",
     ]);
     expect(details.ratings.total).toBe(80);
+  });
+});
+
+describe("gamesById", () => {
+  const fields =
+    "fields name, first_release_date, cover.image_id, platforms.name, total_rating, rating, aggregated_rating;";
+
+  test("gives the games IGDB knows among the ids, read and converted like search results", async () => {
+    answer(json([zelda]));
+    const games = await gamesById([7346, 9999], relay);
+    expect(calls[0].init.body).toBe(
+      `${fields} where id = (7346,9999); limit 500;`
+    );
+    expect(games).toEqual([
+      {
+        id: 7346,
+        name: "Zelda",
+        year: 2017,
+        coverUrl:
+          "https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg",
+        platforms: [{ id: 130, name: "Nintendo Switch" }],
+        igdbRating: 92,
+        igdbUserRating: 90,
+        igdbCriticRating: null,
+      },
+    ]);
+  });
+
+  test("asks 500 ids at a time and puts the answers together", async () => {
+    const ids = Array.from({ length: 501 }, (_, index) => index + 1);
+    answer(
+      twitch,
+      json([{ id: 1, name: "First" }]),
+      json([{ id: 501, name: "Last" }])
+    );
+    const games = await gamesById(ids, keys);
+    expect(calls.slice(1).map((call) => call.init.body)).toEqual([
+      `${fields} where id = (${ids.slice(0, 500).join(",")}); limit 500;`,
+      `${fields} where id = (501); limit 500;`,
+    ]);
+    expect(games.map((game) => game.name)).toEqual(["First", "Last"]);
+  });
+
+  test("asks nothing for no ids", async () => {
+    answer(twitch);
+    expect(await gamesById([], keys)).toEqual([]);
+    expect(calls).toHaveLength(0);
   });
 });
