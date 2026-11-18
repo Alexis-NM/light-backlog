@@ -1,93 +1,134 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Game } from "@/core/game";
-import { gamesByPlatform, IgdbError, PLATFORM_PAGE_SIZE } from "@/core/igdb";
+import {
+  gamesByPlatform,
+  type IgdbAuth,
+  IgdbError,
+  PLATFORM_PAGE_SIZE,
+} from "@/core/igdb";
 
 type Phase = "idle" | "loading" | "done" | "error";
+
+/** The games of one console, loaded with one set of credentials. */
+interface Loaded {
+  auth: IgdbAuth;
+  /** Set when the first page could not be loaded. */
+  failure?: { error: unknown };
+  games: Game[];
+  hasMore: boolean;
+  platformId: number;
+}
+
+const NO_GAMES: Game[] = [];
+
+const isFullPage = (games: Game[]) => games.length === PLATFORM_PAGE_SIZE;
+
+function phaseOf(active: boolean, current: Loaded | null): Phase {
+  if (!active) {
+    return "idle";
+  }
+  if (!current) {
+    return "loading";
+  }
+  return current.failure ? "error" : "done";
+}
 
 export function usePlatformGames(platformId: number | null) {
   const { auth } = useCredentials();
   const { t } = useLanguage();
-
-  const [games, setGames] = useState<Game[]>([]);
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [errorText, setErrorText] = useState("");
-
-  const loadingRef = useRef(false);
-  const hasMoreRef = useRef(true);
-  const offsetRef = useRef(0);
-
-  const describeError = useCallback(
-    (error: unknown) => {
-      if (error instanceof IgdbError && error.kind === "network") {
-        return t("network_error");
-      }
-      if (error instanceof IgdbError && error.kind === "auth") {
-        return t("creds_invalid");
-      }
-      if (error instanceof IgdbError) {
-        return error.message;
-      }
-      return t("error");
-    },
-    [t]
-  );
-
-  const loadPage = useCallback(
-    async (reset: boolean) => {
-      if (!auth || platformId === null || loadingRef.current) {
-        return;
-      }
-      if (!(reset || hasMoreRef.current)) {
-        return;
-      }
-      loadingRef.current = true;
-      if (reset) {
-        offsetRef.current = 0;
-        hasMoreRef.current = true;
-        setGames([]);
-        setPhase("loading");
-      } else {
-        setLoadingMore(true);
-      }
-
-      try {
-        const found = await gamesByPlatform(
-          platformId,
-          auth,
-          offsetRef.current
-        );
-        hasMoreRef.current = found.length === PLATFORM_PAGE_SIZE;
-        offsetRef.current += found.length;
-        setGames((prev) => (reset ? found : [...prev, ...found]));
-        setPhase("done");
-      } catch (error) {
-        if (reset) {
-          setErrorText(describeError(error));
-          setPhase("error");
-        }
-        hasMoreRef.current = false;
-      } finally {
-        loadingRef.current = false;
-        setLoadingMore(false);
-      }
-    },
-    [auth, platformId, describeError]
-  );
+  const loadingMoreRef = useRef(false);
 
   useEffect(() => {
-    if (platformId !== null) {
-      loadPage(true);
+    if (!auth || platformId === null) {
+      return;
     }
-  }, [platformId, loadPage]);
+    // Once the console or the credentials change, this answer is dropped.
+    let ignore = false;
+    gamesByPlatform(platformId, auth)
+      .then((games) => {
+        if (!ignore) {
+          setLoaded({ auth, platformId, games, hasMore: isFullPage(games) });
+        }
+      })
+      .catch((error: unknown) => {
+        if (!ignore) {
+          setLoaded({
+            auth,
+            platformId,
+            games: [],
+            hasMore: false,
+            failure: { error },
+          });
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [auth, platformId]);
+
+  // Games loaded for another console, or with other credentials, never show.
+  const current =
+    loaded && loaded.platformId === platformId && loaded.auth === auth
+      ? loaded
+      : null;
+
+  const describeError = (error: unknown) => {
+    if (error instanceof IgdbError && error.kind === "network") {
+      return t("network_error");
+    }
+    if (error instanceof IgdbError && error.kind === "auth") {
+      return t("creds_invalid");
+    }
+    if (error instanceof IgdbError) {
+      return error.message;
+    }
+    return t("error");
+  };
+
+  const loadMore = () => {
+    if (!current?.hasMore || loadingMoreRef.current) {
+      return;
+    }
+    const offset = current.games.length;
+    // Only extends the very games it was asked for.
+    const matches = (prev: Loaded | null): prev is Loaded =>
+      prev?.platformId === current.platformId &&
+      prev.auth === current.auth &&
+      prev.games.length === offset;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    gamesByPlatform(current.platformId, current.auth, offset)
+      .then((page) =>
+        setLoaded((prev) =>
+          matches(prev)
+            ? {
+                ...prev,
+                games: [...prev.games, ...page],
+                hasMore: isFullPage(page),
+              }
+            : prev
+        )
+      )
+      .catch(() =>
+        setLoaded((prev) =>
+          matches(prev) ? { ...prev, hasMore: false } : prev
+        )
+      )
+      .finally(() => {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      });
+  };
 
   return {
-    games,
-    phase,
+    games: current?.games ?? NO_GAMES,
+    phase: phaseOf(Boolean(auth) && platformId !== null, current),
     loadingMore,
-    errorText,
-    loadMore: () => loadPage(false),
+    errorText: current?.failure ? describeError(current.failure.error) : "",
+    loadMore,
   };
 }
