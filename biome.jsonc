@@ -14,5 +14,29 @@
         }
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      // core/ is plain TypeScript, also read from outside this app, where the
+      // "@/" alias means something else.
+      "includes": ["core/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [":ALIAS:", ":NODE:", ":PACKAGE:"],
+                    "message": "core/ has no dependency: import other core files with a relative path."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

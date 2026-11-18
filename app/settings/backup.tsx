@@ -7,13 +7,9 @@ import { ToggleSwitch } from "@/components/ToggleSwitch";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { type Backup, BackupError } from "@/core/backup";
 import { useBackup } from "@/hooks/useBackup";
-import {
-  type Backup,
-  BackupError,
-  readBackupFile,
-  writeBackupFile,
-} from "@/services/backup";
+import { readBackupFile, writeBackupFile } from "@/services/backupFile";
 import { n } from "@/utils/scaling";
 
 export default function BackupScreen() {

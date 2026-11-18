@@ -6,12 +6,12 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { usePersistedState } from "@/hooks/usePersistedState";
 import {
   type Language,
   type TranslationKey,
   translations,
-} from "@/i18n/translations";
+} from "@/core/translations";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 type TranslateParams = Record<string, string | number>;
 type Translate = (key: TranslationKey, params?: TranslateParams) => string;

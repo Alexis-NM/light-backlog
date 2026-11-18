@@ -101,6 +101,11 @@ bun dev          # build the debug app and run it on a device/emulator
 The `android/` and `ios/` folders are **not** committed — they are generated
 from `app.json` and the config plugins by `expo prebuild` (or by EAS in CI).
 
+The logic that does not depend on React Native or Expo (data types, IGDB
+client, list import, backup format, translations, consoles) lives in `core/`:
+plain TypeScript with no dependency, whose files import each other with
+relative paths (`bun run check` enforces both).
+
 To produce a standalone, installable APK locally:
 
 ```bash
@@ -136,7 +141,7 @@ IGDB_CLIENT_ID=… IGDB_CLIENT_SECRET=… bun run test:import --no-baseline
 ```
 
 Add a list (or an entry that went wrong for you) and re-run before touching
-the scoring in `services/importMatcher.ts`.
+the scoring in `core/importMatcher.ts`.
 
 ## Releases (CI)
 

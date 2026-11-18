@@ -2,7 +2,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { memo, useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import type { Game } from "@/types/game";
+import type { Game } from "@/core/game";
 import { openGame } from "@/utils/navigation";
 import { n } from "@/utils/scaling";
 import { COVER_RATIO, GameCover } from "./GameCover";

@@ -7,13 +7,13 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { type IgdbAuth, searchGames, searchGamesBatch } from "../services/igdb";
+import { type IgdbAuth, searchGames, searchGamesBatch } from "../core/igdb";
 import {
   type ImportMatch,
   matchImportTitles,
   normalizeTitle,
   parseTitleHints,
-} from "../services/importMatcher";
+} from "../core/importMatcher";
 
 interface Expectation {
   expect: string | string[];

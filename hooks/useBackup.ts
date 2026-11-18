@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
 import { useSort } from "@/contexts/SortContext";
-import { BACKUP_APP, BACKUP_VERSION, type Backup } from "@/services/backup";
+import { BACKUP_APP, BACKUP_VERSION, type Backup } from "@/core/backup";
 
 /** Applies a restored setting only when the backup actually carries it. */
 const apply = <T>(value: T | undefined, set: (value: T) => Promise<void>) =>

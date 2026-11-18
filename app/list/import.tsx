@@ -21,9 +21,9 @@ import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { IgdbError, searchGamesBatch, toGame } from "@/services/igdb";
-import { type ImportMatch, matchImportTitles } from "@/services/importMatcher";
-import { parseGameTitles } from "@/services/listParser";
+import { IgdbError, searchGamesBatch, toGame } from "@/core/igdb";
+import { type ImportMatch, matchImportTitles } from "@/core/importMatcher";
+import { parseGameTitles } from "@/core/listParser";
 import { n } from "@/utils/scaling";
 
 type Phase = "idle" | "matching" | "done" | "error";

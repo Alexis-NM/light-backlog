@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { GameList } from "@/types/game";
+import type { GameList } from "@/core/game";
 
 // Each list lives under its own key so a change only rewrites that list and a
 // single big list never hits Android's per-row storage limit.

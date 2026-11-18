@@ -17,6 +17,13 @@ Expo template with pre-built components and patterns.
 - `bun test` - Unit tests (`*.test.ts`, run with `bun:test`)
 - `bun run test:import` - Live check of the list-import matcher against IGDB (needs `IGDB_CLIENT_ID` / `IGDB_CLIENT_SECRET`)
 
+## Pure logic (`core/`)
+`core/` holds what needs neither React Native nor Expo: data types, IGDB client, list import, backup format and validation, translations, consoles, sort orders. It is also read from outside this app.
+- Plain TypeScript: no package import, not even React.
+- Relative imports between core files, never `@/` (the alias means something else outside this app). The app imports core as `@/core/...`.
+- `bun run check` enforces both rules (override in `biome.jsonc`).
+- Device code stays out of core: storage, secure store, file pickers (`services/listStorage.ts`, `services/backupFile.ts`, `contexts/`).
+
 ## Setup
 Update `app.json`:
 ```json

@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, View } from "react-native";
-import { CONSOLES, EXTRA_CONSOLES } from "@/constants/consoles";
+import { CONSOLES, EXTRA_CONSOLES } from "@/core/consoles";
 import { n } from "@/utils/scaling";
 import { HapticPressable } from "./HapticPressable";
 import { StyledText } from "./StyledText";

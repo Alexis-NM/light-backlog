@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { CandidateQuery, MatchCandidate } from "@/services/igdb";
+import type { CandidateQuery, MatchCandidate } from "./igdb";
 import {
   baseTitle,
   looseTitle,
@@ -8,7 +8,7 @@ import {
   parseTitleHints,
   pickBestMatch,
   titleSimilarity,
-} from "@/services/importMatcher";
+} from "./importMatcher";
 
 const PS2 = { id: 8, name: "PlayStation 2" };
 const PS4 = { id: 48, name: "PlayStation 4" };

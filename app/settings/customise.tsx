@@ -4,7 +4,7 @@ import { SelectorButton } from "@/components/SelectorButton";
 import { StyledButton } from "@/components/StyledButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSort } from "@/contexts/SortContext";
-import type { TranslationKey } from "@/i18n/translations";
+import type { TranslationKey } from "@/core/translations";
 
 export default function CustomiseScreen() {
   const { t, language } = useLanguage();

@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
+import type { Console } from "@/core/game";
 import { usePersistedState } from "@/hooks/usePersistedState";
-import type { Console } from "@/types/game";
 
 interface BrowseContextType {
   selectedConsole: Console | null;

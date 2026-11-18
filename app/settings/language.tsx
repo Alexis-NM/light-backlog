@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { OptionsSelector } from "@/components/OptionsSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
-import type { Language } from "@/i18n/translations";
+import type { Language } from "@/core/translations";
 
 export default function LanguageScreen() {
   const { t, language, setLanguage } = useLanguage();

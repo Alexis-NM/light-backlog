@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import type { Game } from "@/types/game";
+import type { Game } from "@/core/game";
 
 export function openGame(game: Game, platform?: string) {
   router.push({

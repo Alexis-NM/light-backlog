@@ -7,7 +7,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import type { Game } from "@/types/game";
+import type { Game } from "@/core/game";
 import { n } from "@/utils/scaling";
 import { cardHeight, GameCard } from "./GameCard";
 import { type ContentWidth, horizontalPadding } from "./ScreenFrame";

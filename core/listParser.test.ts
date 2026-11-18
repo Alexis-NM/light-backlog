@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseGameTitles } from "@/services/listParser";
+import { parseGameTitles } from "./listParser";
 
 describe("parseGameTitles", () => {
   test("one title per line, blank lines and duplicates dropped", () => {

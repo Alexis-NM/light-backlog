@@ -9,8 +9,8 @@
 // year hint and popularity. Titles with nothing on the chosen consoles are
 // retried without the platform filter and flagged for review.
 
-import { platformIdFor, platformIdsFor } from "@/constants/consoles";
-import type { CandidateQuery, MatchCandidate } from "@/services/igdb";
+import { platformIdFor, platformIdsFor } from "./consoles";
+import type { CandidateQuery, MatchCandidate } from "./igdb";
 
 export interface TitleHints {
   /** IGDB platform ids from a trailing "(PS2)"-style hint. */
@@ -36,7 +36,7 @@ export type SearchBatch = (
 
 export interface MatchOptions {
   batchSize?: number;
-  /** Console names as picked in the app (see constants/consoles.ts). */
+  /** Console names as picked in the app (see consoles.ts). */
   consoles?: readonly string[];
   /** Pause between two search requests (IGDB allows 4 per second). */
   delayMs?: number;

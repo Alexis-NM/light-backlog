@@ -63,6 +63,16 @@ export function entryPlatforms(entry: LibraryEntry): string[] {
 
 export type SortMode = "alpha" | "alpha_desc" | "igdb" | "rating" | "recent";
 
+export const LIBRARY_SORTS: SortMode[] = [
+  "alpha",
+  "alpha_desc",
+  "recent",
+  "rating",
+  "igdb",
+];
+
+export const LIST_SORTS: SortMode[] = ["alpha", "alpha_desc", "recent", "igdb"];
+
 export interface GameList {
   consoles?: string[];
   createdAt: number;

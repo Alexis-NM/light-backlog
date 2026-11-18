@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { fetchRatings } from "@/services/igdb";
-import { type Game, hasRatings } from "@/types/game";
+import { type Game, hasRatings } from "@/core/game";
+import { fetchRatings } from "@/core/igdb";
 
 /**
  * Fills in the IGDB rating of games saved before ratings were stored (or

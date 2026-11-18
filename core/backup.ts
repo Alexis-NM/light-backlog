@@ -1,18 +1,14 @@
-import { getDocumentAsync } from "expo-document-picker";
-import { Directory, File } from "expo-file-system";
-import {
-  LIBRARY_SORTS,
-  LIST_SORTS,
-  type SortMode,
-} from "@/contexts/SortContext";
-import { type Language, translations } from "@/i18n/translations";
-import type { IgdbAuth } from "@/services/igdb";
 import {
   type Console,
   GAME_STATUSES,
   type GameList,
+  LIBRARY_SORTS,
+  LIST_SORTS,
   type LibraryEntry,
-} from "@/types/game";
+  type SortMode,
+} from "./game";
+import type { IgdbAuth } from "./igdb";
+import { type Language, translations } from "./translations";
 
 // A backup is one JSON document holding everything the app persists. JSON is
 // what the app already stores internally, so exporting needs no conversion and
@@ -20,7 +16,6 @@ import {
 
 export const BACKUP_APP = "backlog";
 export const BACKUP_VERSION = 1;
-const MIME_TYPE = "application/json";
 
 export interface BackupSettings {
   gamesFullscreen: boolean;
@@ -55,7 +50,7 @@ export class BackupError extends Error {
   }
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isGame = (value: unknown) =>
@@ -154,49 +149,4 @@ export function parseBackup(text: string): Backup {
     settings: parseSettings(data.settings),
     credentials: isCredentials(data.credentials) ? data.credentials : undefined,
   };
-}
-
-const isPickerCancelled = (error: unknown) =>
-  isRecord(error) && error.code === "ERR_PICKER_CANCELLED";
-
-/** Lets the user pick a folder, then writes the backup there. Resolves to the file name. */
-export async function writeBackupFile(backup: Backup): Promise<string> {
-  let directory: Directory;
-  try {
-    directory = await Directory.pickDirectoryAsync();
-  } catch (error) {
-    if (isPickerCancelled(error)) {
-      throw new BackupError("cancelled", "Folder picker cancelled.");
-    }
-    throw new BackupError("write", "Could not open the folder.");
-  }
-  const name = backupFileName();
-  try {
-    const file = directory.createFile(name, MIME_TYPE);
-    file.write(serializeBackup(backup));
-  } catch {
-    throw new BackupError("write", "Could not write the backup file.");
-  }
-  return name;
-}
-
-/** Lets the user pick a backup file and returns its parsed content. */
-export async function readBackupFile(): Promise<Backup> {
-  // Not every file provider labels .json files as application/json, and the
-  // parser rejects anything else anyway, so the picker is left unfiltered.
-  const result = await getDocumentAsync({
-    type: "*/*",
-    copyToCacheDirectory: true,
-  });
-  const asset = result.assets?.[0];
-  if (result.canceled || !asset) {
-    throw new BackupError("cancelled", "File picker cancelled.");
-  }
-  let text: string;
-  try {
-    text = await new File(asset.uri).text();
-  } catch {
-    throw new BackupError("read", "Could not read the file.");
-  }
-  return parseBackup(text);
 }

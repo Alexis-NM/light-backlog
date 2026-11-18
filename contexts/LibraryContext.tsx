@@ -5,7 +5,6 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { usePersistedState } from "@/hooks/usePersistedState";
 import {
   entryPlatforms,
   type Game,
@@ -13,7 +12,8 @@ import {
   type LibraryEntry,
   type StoredRatings,
   sameRatings,
-} from "@/types/game";
+} from "@/core/game";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 type Entries = Record<number, LibraryEntry>;
 

@@ -1,7 +1,7 @@
-import type { Console } from "@/types/game";
+import type { Console } from "./game";
 
 // IGDB platform IDs (https://api.igdb.com/v4/platforms).
-// `family` is a translation key (see family_* in i18n/translations.ts).
+// `family` is a translation key (see family_* in translations.ts).
 // Within each family, consoles are ordered newest release first.
 export const CONSOLES: readonly Console[] = [
   { id: 167, name: "PlayStation 5", family: "playstation" }, // 2020

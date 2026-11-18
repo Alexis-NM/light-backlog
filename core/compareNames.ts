@@ -1,4 +1,4 @@
-import type { Game } from "@/types/game";
+import type { Game } from "./game";
 
 const collator = new Intl.Collator();
 

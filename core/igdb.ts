@@ -1,4 +1,4 @@
-import type { Game, Platform, StoredRatings } from "@/types/game";
+import type { Game, Platform, StoredRatings } from "./game";
 
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const API_URL = "https://api.igdb.com/v4";

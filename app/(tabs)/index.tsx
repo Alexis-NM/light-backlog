@@ -11,16 +11,16 @@ import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useSort } from "@/contexts/SortContext";
-import { usePersistedState } from "@/hooks/usePersistedState";
-import type { TranslationKey } from "@/i18n/translations";
+import { compareIgdbRating, compareNames } from "@/core/compareNames";
 import {
   entryPlatforms,
   GAME_STATUSES,
   type Game,
   type GameStatus,
   type LibraryEntry,
-} from "@/types/game";
-import { compareIgdbRating, compareNames } from "@/utils/compareNames";
+} from "@/core/game";
+import type { TranslationKey } from "@/core/translations";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { n } from "@/utils/scaling";
 
 type Filter = "all" | GameStatus;

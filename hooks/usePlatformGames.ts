@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import {
-  gamesByPlatform,
-  IgdbError,
-  PLATFORM_PAGE_SIZE,
-} from "@/services/igdb";
-import type { Game } from "@/types/game";
+import type { Game } from "@/core/game";
+import { gamesByPlatform, IgdbError, PLATFORM_PAGE_SIZE } from "@/core/igdb";
 
 type Phase = "idle" | "loading" | "done" | "error";
 

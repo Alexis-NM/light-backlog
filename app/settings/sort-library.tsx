@@ -1,8 +1,9 @@
 import { router } from "expo-router";
 import { OptionsSelector } from "@/components/OptionsSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LIBRARY_SORTS, type SortMode, useSort } from "@/contexts/SortContext";
-import type { TranslationKey } from "@/i18n/translations";
+import { useSort } from "@/contexts/SortContext";
+import { LIBRARY_SORTS, type SortMode } from "@/core/game";
+import type { TranslationKey } from "@/core/translations";
 
 export default function SortLibraryScreen() {
   const { t } = useLanguage();

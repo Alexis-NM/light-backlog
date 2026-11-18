@@ -13,10 +13,15 @@ import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { LIST_SORTS, type SortMode, useSort } from "@/contexts/SortContext";
-import type { TranslationKey } from "@/i18n/translations";
-import type { Game, GameList } from "@/types/game";
-import { compareIgdbRating, compareNames } from "@/utils/compareNames";
+import { useSort } from "@/contexts/SortContext";
+import { compareIgdbRating, compareNames } from "@/core/compareNames";
+import {
+  type Game,
+  type GameList,
+  LIST_SORTS,
+  type SortMode,
+} from "@/core/game";
+import type { TranslationKey } from "@/core/translations";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 

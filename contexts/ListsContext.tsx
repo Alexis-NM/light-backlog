@@ -8,6 +8,13 @@ import {
   useState,
 } from "react";
 import {
+  type Game,
+  type GameList,
+  type SortMode,
+  type StoredRatings,
+  sameRatings,
+} from "@/core/game";
+import {
   loadLists,
   removeAllLists,
   removeList,
@@ -15,13 +22,6 @@ import {
   saveList,
   saveListOrder,
 } from "@/services/listStorage";
-import {
-  type Game,
-  type GameList,
-  type SortMode,
-  type StoredRatings,
-  sameRatings,
-} from "@/types/game";
 
 interface ListsContextType {
   addGamesToList: (listId: string, games: Game[]) => void;

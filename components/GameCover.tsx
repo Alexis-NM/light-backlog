@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
-import type { Game } from "@/types/game";
+import type { Game } from "@/core/game";
 import { n } from "@/utils/scaling";
 import { StyledText } from "./StyledText";
 

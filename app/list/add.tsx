@@ -9,7 +9,7 @@ import { TextInput } from "@/components/TextInput";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLists } from "@/contexts/ListsContext";
-import type { Game } from "@/types/game";
+import type { Game } from "@/core/game";
 import { n } from "@/utils/scaling";
 
 function parseGames(raw?: string): Game[] {

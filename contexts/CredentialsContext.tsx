@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { type IgdbAuth, resetIgdbToken } from "@/services/igdb";
+import { type IgdbAuth, resetIgdbToken } from "@/core/igdb";
 
 const CLIENT_ID_KEY = "igdb_client_id";
 const CLIENT_SECRET_KEY = "igdb_client_secret";

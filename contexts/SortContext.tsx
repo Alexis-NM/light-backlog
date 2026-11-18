@@ -1,18 +1,6 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
+import type { SortMode } from "@/core/game";
 import { usePersistedState } from "@/hooks/usePersistedState";
-import type { SortMode } from "@/types/game";
-
-export type { SortMode } from "@/types/game";
-
-export const LIBRARY_SORTS: SortMode[] = [
-  "alpha",
-  "alpha_desc",
-  "recent",
-  "rating",
-  "igdb",
-];
-
-export const LIST_SORTS: SortMode[] = ["alpha", "alpha_desc", "recent", "igdb"];
 
 interface SortContextType {
   librarySort: SortMode;

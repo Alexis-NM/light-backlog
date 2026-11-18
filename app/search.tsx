@@ -8,14 +8,14 @@ import { yearOf } from "@/components/GameGrid";
 import { GameGridContainer } from "@/components/GameGridContainer";
 import { StyledText } from "@/components/StyledText";
 import { TextInput } from "@/components/TextInput";
-import { platformIdsFor } from "@/constants/consoles";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
+import { platformIdsFor } from "@/core/consoles";
+import type { Game } from "@/core/game";
+import { IgdbError, searchGames } from "@/core/igdb";
 import { usePersistedState } from "@/hooks/usePersistedState";
-import { IgdbError, searchGames } from "@/services/igdb";
-import type { Game } from "@/types/game";
 import { n } from "@/utils/scaling";
 
 type Phase = "idle" | "loading" | "done" | "error";
