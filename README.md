@@ -89,10 +89,15 @@ makes no sync request. To keep the same library and lists on several devices,
 point the app at a server of your own in **Settings → Sync**: its HTTPS
 address and its token. The token is stored with `expo-secure-store`.
 
-- The app syncs when it opens, when it comes back to the foreground, a few
-  seconds after a change to the library or the lists (a burst of changes
+- The app syncs when it opens, when it comes back to the foreground, when you
+  arrive on the Library, Games, Lists or a list (at most every 30 seconds), a
+  few seconds after a change to the library or the lists (a burst of changes
   makes one sync, sent at once if you leave the app), and with **Sync now**.
-  Offline, changes wait for the next sync.
+- Offline, or while the server wakes up, changes wait. As long as the app
+  stays in the foreground, a failed sync is tried again after 30 seconds,
+  1 minute, 2 minutes, then every 5 minutes, until it goes through or nothing
+  waits. There is no other periodic sync, so that the server's database can
+  sleep.
 - The library and the lists sync, with their sort, consoles and order. The
   other settings stay on each device.
 - For each game, list or game in a list, the most recent change wins, so

@@ -272,6 +272,10 @@ export function pendingChanges(
   return { changes, skipped };
 }
 
+/** Whether anything waits to be sent: a change, or a deletion. */
+export const hasPendingChanges = (local: LocalData, state: SyncState) =>
+  countChanges(pendingChanges(local, state).changes) > 0;
+
 /**
  * Splits the changes into requests of at most `size` elements. Every list
  * goes in the first one: the server refuses a game whose list it lacks.
@@ -322,6 +326,10 @@ export class SyncFailure extends Error {
     this.name = "SyncFailure";
   }
 }
+
+/** A failure that may pass on its own: no network, or a server failing or waking up. */
+export const isTransient = (kind: SyncFailureKind) =>
+  kind === "network" || kind === "server";
 
 /** The latest version of each element among several responses. */
 const mergeChanges = (pages: SyncChanges[]): SyncChanges => ({

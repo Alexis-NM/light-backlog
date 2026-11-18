@@ -23,6 +23,7 @@ import {
 } from "@/core/game";
 import { listGames } from "@/core/lists";
 import type { TranslationKey } from "@/core/translations";
+import { useSyncOnFocus } from "@/hooks/useSyncOnFocus";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 
@@ -42,6 +43,7 @@ function orderedGames(list: GameList, sort: SortMode) {
 }
 
 export default function ListDetailScreen() {
+  useSyncOnFocus();
   const { t } = useLanguage();
   const confirm = useConfirm();
   const {

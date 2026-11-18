@@ -6,10 +6,12 @@ import { HapticPressable } from "@/components/HapticPressable";
 import { StyledText } from "@/components/StyledText";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLists } from "@/contexts/ListsContext";
+import { useSyncOnFocus } from "@/hooks/useSyncOnFocus";
 import { openList } from "@/utils/navigation";
 import { n } from "@/utils/scaling";
 
 export default function ListsScreen() {
+  useSyncOnFocus();
   const { t } = useLanguage();
   const { lists } = useLists();
 

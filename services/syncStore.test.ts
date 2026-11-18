@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import type { LibraryEntry } from "@/core/game";
 import { deletedEntries, newSyncState } from "@/core/syncClient";
+import type { SyncSignal } from "./syncStore";
 
 // In-memory AsyncStorage: the real one needs React Native.
 const stored = new Map<string, string>();
@@ -21,10 +22,11 @@ mock.module("@react-native-async-storage/async-storage", () => ({
 const {
   getSyncState,
   notifyLocalChange,
+  notifyScreenView,
   recordDeletions,
   setSyncState,
   syncStateLoaded,
-  watchLocalChanges,
+  watchSyncSignals,
 } = await import("./syncStore");
 
 const entry: LibraryEntry = {
@@ -59,18 +61,20 @@ test("turning sync off forgets them", async () => {
   expect(stored.has("sync:state")).toBe(false);
 });
 
-test("tells the sync about the user's changes only while sync is on", async () => {
-  let heard = 0;
-  const stop = watchLocalChanges(() => {
-    heard += 1;
+test("tells the sync about changes and screens only while sync is on", async () => {
+  const heard: SyncSignal[] = [];
+  const stop = watchSyncSignals((signal) => {
+    heard.push(signal);
   });
   notifyLocalChange();
-  expect(heard).toBe(0);
+  notifyScreenView();
+  expect(heard).toEqual([]);
   await setSyncState(newSyncState());
   notifyLocalChange();
-  expect(heard).toBe(1);
+  notifyScreenView();
+  expect(heard).toEqual(["change", "view"]);
   stop();
   notifyLocalChange();
-  expect(heard).toBe(1);
+  expect(heard).toEqual(["change", "view"]);
   await setSyncState(null);
 });

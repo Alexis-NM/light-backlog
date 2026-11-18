@@ -21,6 +21,7 @@ import {
 } from "@/core/game";
 import type { TranslationKey } from "@/core/translations";
 import { usePersistedState } from "@/hooks/usePersistedState";
+import { useSyncOnFocus } from "@/hooks/useSyncOnFocus";
 import { n } from "@/utils/scaling";
 
 type Filter = "all" | GameStatus;
@@ -62,6 +63,7 @@ function FilterChip({
 }
 
 export default function LibraryScreen() {
+  useSyncOnFocus();
   const { t } = useLanguage();
   const confirm = useConfirm();
   const { entries, setStatusMany, removeMany } = useLibrary();

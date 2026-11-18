@@ -18,10 +18,12 @@ import type { Game } from "@/core/game";
 import type { TranslationKey } from "@/core/translations";
 import { useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { usePlatformGames } from "@/hooks/usePlatformGames";
+import { useSyncOnFocus } from "@/hooks/useSyncOnFocus";
 import { triggerHaptic, triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 
 export default function GamesScreen() {
+  useSyncOnFocus();
   const { t } = useLanguage();
   const access = useIgdbAccess();
   const { invertColors } = useInvertColors();

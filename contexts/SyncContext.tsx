@@ -18,19 +18,22 @@ import type { IgdbRelay } from "@/core/igdb";
 import {
   checkConnection,
   createTransport,
+  hasPendingChanges,
+  isTransient,
   newSyncState,
   SyncFailure,
   type SyncFailureKind,
   syncEndpoint,
   syncOnce,
 } from "@/core/syncClient";
-import { createSyncRunner } from "@/core/syncRunner";
+import { createSyncRunner, type SyncOutcome } from "@/core/syncRunner";
 import { useBackup } from "@/hooks/useBackup";
 import {
   getSyncState,
+  type SyncSignal,
   setSyncState,
   syncStateLoaded,
-  watchLocalChanges,
+  watchSyncSignals,
 } from "@/services/syncStore";
 
 const ENDPOINT_KEY = "sync_endpoint";
@@ -39,6 +42,10 @@ const API_PATH = /\/api\/sync$/;
 
 /** How long the changes must stop before the sync that sends them. */
 const CHANGE_DELAY_MS = 3000;
+/** A screen that comes into view syncs only when no sync started for this long. */
+const FRESH_MS = 30_000;
+/** The waits before trying a failed sync again: 30 s, 1 min, 2 min, then every 5 min. */
+const RETRY_DELAYS_MS = [30_000, 60_000, 120_000, 300_000];
 
 // Written at the first connection, in case the first merge is not what was
 // expected. It stays in the app's own storage.
@@ -120,7 +127,21 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
   const [serverLoaded, setServerLoaded] = useState(false);
   const [status, setStatus] = useState<SyncStatus>(OFF);
   const [hasCopy, setHasCopy] = useState(() => copyFile().exists);
-  const [runner] = useState(() => createSyncRunner(CHANGE_DELAY_MS));
+  // getEntries and getLists never change: they give the latest data.
+  const [runner] = useState(() =>
+    createSyncRunner({
+      changeDelayMs: CHANGE_DELAY_MS,
+      freshMs: FRESH_MS,
+      hasPending: () => {
+        const state = getSyncState();
+        return (
+          state !== null &&
+          hasPendingChanges({ library: getEntries(), lists: getLists() }, state)
+        );
+      },
+      retryDelaysMs: RETRY_DELAYS_MS,
+    })
+  );
 
   useEffect(() => {
     Promise.all([
@@ -148,7 +169,7 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
 
   /** One sync, whose outcome goes into the status. The runner starts it. */
   const syncWith = useCallback(
-    async (target: Server) => {
+    async (target: Server): Promise<SyncOutcome> => {
       setStatus((current) => ({
         ...current,
         phase: "syncing",
@@ -166,14 +187,11 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
           post: createTransport(target.endpoint, target.token),
         });
         setStatus(settledStatus({ phase: "idle", skipped }));
+        return "done";
       } catch (error) {
-        setStatus(
-          settledStatus({
-            phase: "error",
-            problem: problemOf(error),
-            skipped: 0,
-          })
-        );
+        const problem = problemOf(error);
+        setStatus(settledStatus({ phase: "error", problem, skipped: 0 }));
+        return isTransient(problem) ? "retry" : "done";
       }
     },
     [commitLibrary, commitLists, getEntries, getLists]
@@ -185,17 +203,26 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [runner, server, syncWith]);
 
-  // When the app opens, once its data is read, each time it comes back to
-  // the foreground, and a moment after the user changes the library or the
-  // lists: a burst of changes makes one sync, sent at once if the app leaves
-  // the foreground. Without a server, nothing goes out.
+  // When the app opens, once its data is read; each time it comes back to
+  // the foreground; when a screen comes into view, unless a sync started in
+  // the last 30 s; and a moment after the user changes the library or the
+  // lists (a burst of changes makes one sync, sent at once if the app leaves
+  // the foreground). A sync that fails while changes wait is tried again
+  // while the app stays in the foreground. Nothing else, so that the
+  // server's database can sleep. Without a server, nothing goes out.
   const ready = serverLoaded && libraryLoaded && listsLoaded;
   const onActive = useEffectEvent(() => {
     syncNow();
   });
-  const onLocalChange = useEffectEvent(() => {
-    if (server) {
-      runner.soon(() => syncWith(server));
+  const onSignal = useEffectEvent((signal: SyncSignal) => {
+    if (!server) {
+      return;
+    }
+    const task = () => syncWith(server);
+    if (signal === "change") {
+      runner.soon(task);
+    } else {
+      runner.ifStale(task);
     }
   });
   useEffect(() => {
@@ -205,12 +232,13 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
     onActive();
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {
+        runner.foreground();
         onActive();
       } else {
-        runner.flush();
+        runner.background();
       }
     });
-    const stopWatching = watchLocalChanges(() => onLocalChange());
+    const stopWatching = watchSyncSignals((signal) => onSignal(signal));
     return () => {
       subscription.remove();
       stopWatching();

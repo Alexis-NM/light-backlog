@@ -6,7 +6,11 @@ import { addTombstones, type SyncState } from "@/core/syncClient";
 // The sync state lives here, outside React: the library and the lists record
 // their deletions in it, and the sync reads and writes it. While sync is off
 // there is none, and a deletion leaves no trace. The library and the lists
-// also say here when the user changes them, for the sync to follow.
+// also say here when the user changes them, and screens when they come into
+// view, for the sync to follow.
+
+/** What the app tells the sync: a change of the user's, or a screen that came into view. */
+export type SyncSignal = "change" | "view";
 
 const KEY = "sync:state";
 
@@ -14,7 +18,7 @@ let state: SyncState | null = null;
 let loaded = false;
 const onLoad: (() => void)[] = [];
 let writing: Promise<void> = Promise.resolve();
-const changeListeners = new Set<() => void>();
+const signalListeners = new Set<(signal: SyncSignal) => void>();
 
 const isState = (value: unknown): value is SyncState =>
   isRecord(value) &&
@@ -75,19 +79,31 @@ export function recordDeletions(deleted: Partial<SyncChanges>) {
   }
 }
 
-/** For the sync, to hear about the user's changes. Returns what stops it. */
-export function watchLocalChanges(listener: () => void): () => void {
-  changeListeners.add(listener);
+/** For the sync, to hear what the app tells it. Returns what stops it. */
+export function watchSyncSignals(
+  listener: (signal: SyncSignal) => void
+): () => void {
+  signalListeners.add(listener);
   return () => {
-    changeListeners.delete(listener);
+    signalListeners.delete(listener);
   };
+}
+
+/** Passes a signal on to the sync, while it is on. */
+function tell(signal: SyncSignal) {
+  if (state) {
+    for (const listener of signalListeners) {
+      listener(signal);
+    }
+  }
 }
 
 /** Called after each change the user makes to the library or the lists, for the sync to send it. Does nothing while sync is off. */
 export function notifyLocalChange() {
-  if (state) {
-    for (const listener of changeListeners) {
-      listener();
-    }
-  }
+  tell("change");
+}
+
+/** Called when a screen comes into view, for the sync to bring what changed elsewhere. Does nothing while sync is off. */
+export function notifyScreenView() {
+  tell("view");
 }

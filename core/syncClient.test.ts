@@ -21,11 +21,14 @@ import {
   deletedItems,
   deletedLists,
   type FetchLike,
+  hasPendingChanges,
+  isTransient,
   type LocalData,
   newSyncState,
   noChanges,
   pendingChanges,
   SyncFailure,
+  type SyncFailureKind,
   type SyncState,
   type SyncTransport,
   syncEndpoint,
@@ -259,6 +262,18 @@ describe("pendingChanges", () => {
     expect(changes.lists).toHaveLength(2);
     expect(changes.items).toHaveLength(2);
     expect(skipped).toBe(0);
+  });
+
+  test("tells whether anything waits to be sent", async () => {
+    const server = fakeServer();
+    const phone = device(sample());
+    const waits = () =>
+      hasPendingChanges(phone.local, phone.state as SyncState);
+    expect(waits()).toBe(true);
+    await sync(phone, server);
+    expect(waits()).toBe(false);
+    deleteEntry(phone, 1, 9000);
+    expect(waits()).toBe(true);
   });
 
   test("once synced, only what changed", async () => {
@@ -722,6 +737,17 @@ describe("createTransport", () => {
     expect(await kindOf(() => Promise.reject(new Error("offline")))).toBe(
       "network"
     );
+  });
+
+  test("only no network or a failing server may pass on its own", () => {
+    const kinds: SyncFailureKind[] = [
+      "network",
+      "rejected",
+      "server",
+      "token",
+      "version",
+    ];
+    expect(kinds.filter(isTransient)).toEqual(["network", "server"]);
   });
 
   test("checks a connection without exchanging anything", async () => {
