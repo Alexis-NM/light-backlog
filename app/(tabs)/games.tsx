@@ -9,7 +9,6 @@ import { HapticPressable } from "@/components/HapticPressable";
 import type { RightAction } from "@/components/Header";
 import { StyledText } from "@/components/StyledText";
 import { useBrowse } from "@/contexts/BrowseContext";
-import { useCredentials } from "@/contexts/CredentialsContext";
 import { useFullscreen } from "@/contexts/FullscreenContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -17,13 +16,14 @@ import { useLibrary } from "@/contexts/LibraryContext";
 import { CONSOLE_FAMILIES, CONSOLES } from "@/core/consoles";
 import type { Game } from "@/core/game";
 import type { TranslationKey } from "@/core/translations";
+import { useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { usePlatformGames } from "@/hooks/usePlatformGames";
 import { triggerHaptic, triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 
 export default function GamesScreen() {
   const { t } = useLanguage();
-  const { auth } = useCredentials();
+  const access = useIgdbAccess();
   const { invertColors } = useInvertColors();
   const { gamesFullscreen, setGamesFullscreen } = useFullscreen();
   const { selectedConsole, setSelectedConsole } = useBrowse();
@@ -58,7 +58,7 @@ export default function GamesScreen() {
     [addPlatform, consoleId, consoleName, getEntry, removeEntry]
   );
 
-  if (!auth) {
+  if (!access) {
     return (
       <ContentContainer headerTitle={t("games_title")} hideBackButton>
         <EmptyState

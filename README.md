@@ -74,6 +74,10 @@ Credentials are stored on-device with `expo-secure-store` and never leave it.
 Your library and lists are stored locally (`AsyncStorage`) and work offline.
 They stay on the device unless you set up a sync server.
 
+Without credentials, the app goes through your sync server if one is set
+(see [Sync](#sync)): the server queries IGDB with its own keys. Credentials
+entered in the app always come first.
+
 > French descriptions are produced by machine-translating the (English-only)
 > IGDB summary through a free, keyless service — the summary text is sent to
 > that service for translation. It falls back to English if unavailable.
@@ -95,6 +99,9 @@ address and its token. The token is stored with `expo-secure-store`.
   copy** puts back (turning sync off).
 - **Disconnect** turns sync off: the data stays on the phone. Restoring a
   backup also turns sync off.
+- Without IGDB credentials in the app, search and browsing go through the
+  server: `POST /api/igdb/<endpoint>`, with the Apicalypse query as the body
+  and the same token (see `core/igdb.ts`).
 
 The protocol (one `POST /api/sync`, a bearer token and a version number) is
 described by its types and checks in [`core/sync.ts`](core/sync.ts), and the

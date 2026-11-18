@@ -9,6 +9,28 @@ export interface IgdbAuth {
   clientSecret: string;
 }
 
+/**
+ * IGDB through a server that runs the queries with its own keys:
+ * POST <server>/api/igdb/<endpoint>, with the Apicalypse query as the body.
+ */
+export interface IgdbRelay {
+  /** Such as https://backlog.ondes.dev; empty for the server's own pages. */
+  server: string;
+  /** The sync token. Without it, a browser relies on its session cookie. */
+  token?: string;
+}
+
+/** How to reach IGDB: directly with Twitch keys, or through a server. */
+export type IgdbAccess = IgdbAuth | IgdbRelay;
+
+export const isIgdbRelay = (access: IgdbAccess): access is IgdbRelay =>
+  "server" in access;
+
+const ENDPOINT = /^[a-z_]+$/;
+
+/** An IGDB endpoint name, such as "games": a server checks it before relaying. */
+export const isIgdbEndpoint = (name: string) => ENDPOINT.test(name);
+
 export type IgdbErrorKind = "auth" | "network" | "server";
 
 export class IgdbError extends Error {
@@ -146,11 +168,12 @@ async function getToken(auth: IgdbAuth): Promise<string> {
   return tokenCache.token;
 }
 
-async function apicalypse<T>(
+/** Direct access: only it deals with the Twitch token. */
+async function direct<T>(
   endpoint: string,
   body: string,
   auth: IgdbAuth,
-  allowRetry = true
+  allowRetry: boolean
 ): Promise<T[]> {
   const token = await getToken(auth);
 
@@ -171,12 +194,12 @@ async function apicalypse<T>(
 
   if (response.status === 401 && allowRetry) {
     resetIgdbToken();
-    return apicalypse<T>(endpoint, body, auth, false);
+    return direct<T>(endpoint, body, auth, false);
   }
 
   if (response.status === 429 && allowRetry) {
     await wait(RATE_LIMIT_BACKOFF_MS);
-    return apicalypse<T>(endpoint, body, auth, false);
+    return direct<T>(endpoint, body, auth, false);
   }
 
   if (!response.ok) {
@@ -189,6 +212,86 @@ async function apicalypse<T>(
 
   return (await response.json()) as T[];
 }
+
+/**
+ * Runs an Apicalypse query on an IGDB endpoint with Twitch keys, and gives
+ * back what IGDB answers, as is. A server relays the queries it receives with
+ * it.
+ */
+export function queryIgdb<T = unknown>(
+  endpoint: string,
+  body: string,
+  auth: IgdbAuth
+): Promise<T[]> {
+  if (!isIgdbEndpoint(endpoint)) {
+    return Promise.reject(
+      new IgdbError("server", `Unknown IGDB endpoint "${endpoint}".`)
+    );
+  }
+  return direct<T>(endpoint, body, auth, true);
+}
+
+const TRAILING_SLASHES = /\/+$/;
+
+/** Access through a server, which answers like IGDB itself. */
+async function relay<T>(
+  endpoint: string,
+  body: string,
+  access: IgdbRelay,
+  allowRetry = true
+): Promise<T[]> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "text/plain",
+  };
+  if (access.token) {
+    headers.Authorization = `Bearer ${access.token}`;
+  }
+  const server = access.server.trim().replace(TRAILING_SLASHES, "");
+
+  let response: Response;
+  try {
+    response = await fetch(`${server}/api/igdb/${endpoint}`, {
+      method: "POST",
+      headers,
+      body,
+    });
+  } catch {
+    throw new IgdbError("network", "Failed to reach the server.");
+  }
+
+  if (response.status === 401) {
+    throw new IgdbError("auth", "The server refused the request.");
+  }
+
+  if (response.status === 429 && allowRetry) {
+    await wait(RATE_LIMIT_BACKOFF_MS);
+    return relay<T>(endpoint, body, access, false);
+  }
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new IgdbError(
+      "server",
+      `Server ${response.status}: ${detail.slice(0, 200)}`
+    );
+  }
+
+  const data: unknown = await response.json().catch(() => null);
+  if (!Array.isArray(data)) {
+    throw new IgdbError("server", "The server did not answer with a list.");
+  }
+  return data as T[];
+}
+
+const apicalypse = <T>(
+  endpoint: string,
+  body: string,
+  access: IgdbAccess
+): Promise<T[]> =>
+  isIgdbRelay(access)
+    ? relay<T>(endpoint, body, access)
+    : direct<T>(endpoint, body, access, true);
 
 function mapGame(raw: RawGame): Game {
   const platforms = raw.platforms
@@ -219,7 +322,7 @@ const platformFilter = (platformIds: readonly number[] = []) =>
 
 export async function searchGames(
   query: string,
-  auth: IgdbAuth,
+  access: IgdbAccess,
   platformIds: readonly number[] = []
 ): Promise<Game[]> {
   const safeQuery = safeSearchTerm(query);
@@ -227,7 +330,7 @@ export async function searchGames(
     return [];
   }
   const body = `search "${safeQuery}"; ${GAME_FIELDS}${platformFilter(platformIds)} limit 30;`;
-  const raw = await apicalypse<RawGame>("games", body, auth);
+  const raw = await apicalypse<RawGame>("games", body, access);
   return raw.map(mapGame);
 }
 
@@ -263,7 +366,7 @@ const CANDIDATE_LIMIT = 20;
  */
 export async function searchGamesBatch(
   queries: CandidateQuery[],
-  auth: IgdbAuth
+  access: IgdbAccess
 ): Promise<Record<string, MatchCandidate[]>> {
   const out: Record<string, MatchCandidate[]> = {};
   let first = true;
@@ -278,7 +381,7 @@ export async function searchGamesBatch(
     }
     first = false;
     const body = `search "${term}"; ${CANDIDATE_FIELDS}${platformFilter(query.platformIds)} limit ${CANDIDATE_LIMIT};`;
-    const raw = await apicalypse<RawGame>("games", body, auth);
+    const raw = await apicalypse<RawGame>("games", body, access);
     out[query.key] = raw.map(mapCandidate);
   }
   return out;
@@ -299,7 +402,7 @@ const NO_RATINGS: StoredRatings = {
  */
 export async function fetchRatings(
   ids: number[],
-  auth: IgdbAuth
+  access: IgdbAccess
 ): Promise<Record<number, StoredRatings>> {
   const out: Record<number, StoredRatings> = {};
   for (const id of ids) {
@@ -314,7 +417,7 @@ export async function fetchRatings(
     const raw = await apicalypse<RawRatings & { id: number }>(
       "games",
       body,
-      auth
+      access
     );
     for (const game of raw) {
       out[game.id] = storedRatings(game);
@@ -327,11 +430,11 @@ export const PLATFORM_PAGE_SIZE = 30;
 
 export async function gamesByPlatform(
   platformId: number,
-  auth: IgdbAuth,
+  access: IgdbAccess,
   offset = 0
 ): Promise<Game[]> {
   const body = `${GAME_FIELDS} where platforms = (${platformId}) & cover != null; sort total_rating_count desc; limit ${PLATFORM_PAGE_SIZE}; offset ${offset};`;
-  const raw = await apicalypse<RawGame>("games", body, auth);
+  const raw = await apicalypse<RawGame>("games", body, access);
   return raw.map(mapGame);
 }
 
@@ -339,14 +442,14 @@ const detailsCache = new Map<number, GameDetails>();
 
 export async function getGameDetails(
   id: number,
-  auth: IgdbAuth
+  access: IgdbAccess
 ): Promise<GameDetails> {
   const cached = detailsCache.get(id);
   if (cached) {
     return cached;
   }
   const body = `fields summary, screenshots.image_id, ${RATING_FIELDS}; where id = ${id}; limit 1;`;
-  const raw = await apicalypse<RawGameDetails>("games", body, auth);
+  const raw = await apicalypse<RawGameDetails>("games", body, access);
   const first = raw[0];
   const screenshots = (first?.screenshots ?? [])
     .map((shot) => shot.image_id)

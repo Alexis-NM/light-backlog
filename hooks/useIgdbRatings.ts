@@ -1,9 +1,9 @@
 import { useEffect, useEffectEvent, useRef } from "react";
-import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
 import { type Game, hasRatings, type StoredRatings } from "@/core/game";
 import { fetchRatings } from "@/core/igdb";
+import { useIgdbAccess } from "@/hooks/useIgdbAccess";
 
 /**
  * Fills in the IGDB rating of games saved before ratings were stored (or
@@ -12,7 +12,7 @@ import { fetchRatings } from "@/core/igdb";
  * next library or list change.
  */
 export function useIgdbRatingsBackfill() {
-  const { auth } = useCredentials();
+  const access = useIgdbAccess();
   const library = useLibrary();
   const lists = useLists();
 
@@ -30,7 +30,7 @@ export function useIgdbRatingsBackfill() {
   const { lists: allLists } = lists;
 
   useEffect(() => {
-    if (!auth) {
+    if (!access) {
       return;
     }
     const missing: number[] = [];
@@ -51,12 +51,12 @@ export function useIgdbRatingsBackfill() {
     if (missing.length === 0) {
       return;
     }
-    fetchRatings(missing, auth)
+    fetchRatings(missing, access)
       .then((ratings) => applyRatings(ratings))
       .catch(() => {
         for (const id of missing) {
           requested.current.delete(id);
         }
       });
-  }, [auth, entries, allLists]);
+  }, [access, entries, allLists]);
 }

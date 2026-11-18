@@ -16,7 +16,6 @@ import { StyledButton } from "@/components/StyledButton";
 import { StyledText } from "@/components/StyledText";
 import { placeholderColor, TextInput } from "@/components/TextInput";
 import { ToggleSwitch } from "@/components/ToggleSwitch";
-import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
@@ -24,6 +23,7 @@ import { useLists } from "@/contexts/ListsContext";
 import { IgdbError, searchGamesBatch, toGame } from "@/core/igdb";
 import { type ImportMatch, matchImportTitles } from "@/core/importMatcher";
 import { parseGameTitles } from "@/core/listParser";
+import { refusedMessage, useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { n } from "@/utils/scaling";
 
 type Phase = "idle" | "matching" | "done" | "error";
@@ -43,7 +43,7 @@ const describeMatch = (match: ImportMatch, offConsole: string) => {
 
 export default function ImportListScreen() {
   const { t } = useLanguage();
-  const { auth } = useCredentials();
+  const access = useIgdbAccess();
   const { invertColors } = useInvertColors();
   const { createListWithGames } = useLists();
   const { addMany } = useLibrary();
@@ -67,7 +67,7 @@ export default function ImportListScreen() {
         : [...current, consoleName]
     );
 
-  if (!auth) {
+  if (!access) {
     return (
       <ContentContainer headerTitle={t("import_title")}>
         <EmptyState
@@ -104,7 +104,7 @@ export default function ImportListScreen() {
 
   const describeError = (error: unknown) => {
     if (error instanceof IgdbError && error.kind === "auth") {
-      return t("creds_invalid");
+      return t(refusedMessage(access));
     }
     if (error instanceof IgdbError && error.kind === "network") {
       return t("network_error");
@@ -134,7 +134,7 @@ export default function ImportListScreen() {
     try {
       results = await matchImportTitles(
         titles,
-        (queries) => searchGamesBatch(queries, auth),
+        (queries) => searchGamesBatch(queries, access),
         { consoles, onProgress: (done, total) => setProgress({ done, total }) }
       );
     } catch (error) {

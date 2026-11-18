@@ -30,6 +30,16 @@ export default function SettingsScreen() {
       },
     });
 
+  // Keys entered here come first, then the sync server.
+  const igdbValue = () => {
+    if (hasCredentials) {
+      return t("settings_creds_set");
+    }
+    return serverAddress
+      ? t("settings_creds_relay")
+      : t("settings_creds_not_set");
+  };
+
   const syncValue = () => {
     if (status.phase === "off") {
       return t("settings_sync_off");
@@ -47,9 +57,7 @@ export default function SettingsScreen() {
       <SelectorButton
         href="/settings/credentials"
         label={t("settings_credentials")}
-        value={
-          hasCredentials ? t("settings_creds_set") : t("settings_creds_not_set")
-        }
+        value={igdbValue()}
       />
       <SelectorButton
         href={"/settings/sync" as Href}

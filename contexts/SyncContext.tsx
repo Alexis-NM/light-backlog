@@ -15,6 +15,7 @@ import { AppState } from "react-native";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
 import { parseBackup, serializeBackup } from "@/core/backup";
+import type { IgdbRelay } from "@/core/igdb";
 import {
   checkConnection,
   createTransport,
@@ -64,6 +65,8 @@ interface SyncContextType {
   disconnect: () => Promise<void>;
   /** A copy of the data from before the first sync is kept. */
   hasCopy: boolean;
+  /** IGDB through the sync server, with the sync token; null while sync is off. */
+  igdbRelay: IgdbRelay | null;
   /** Turns sync off, then puts back the data from before the first sync. */
   restoreCopy: () => Promise<void>;
   /** The server's address, null while sync is off. */
@@ -79,6 +82,7 @@ const SyncContext = createContext<SyncContextType>({
   connect: () => Promise.resolve(undefined),
   disconnect: () => Promise.resolve(),
   hasCopy: false,
+  igdbRelay: null,
   restoreCopy: () => Promise.resolve(),
   serverAddress: null,
   status: OFF,
@@ -264,18 +268,37 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
     await restoreBackup(backup);
   }, [disconnect, restoreBackup]);
 
+  // One object while the server stays the same: screens compare it.
+  const igdbRelay = useMemo<IgdbRelay | null>(
+    () =>
+      server
+        ? { server: server.endpoint.replace(API_PATH, ""), token: server.token }
+        : null,
+    [server]
+  );
+
   const value = useMemo(
     () => ({
       check,
       connect,
       disconnect,
       hasCopy,
+      igdbRelay,
       restoreCopy,
-      serverAddress: server ? server.endpoint.replace(API_PATH, "") : null,
+      serverAddress: igdbRelay?.server ?? null,
       status,
       syncNow,
     }),
-    [check, connect, disconnect, hasCopy, restoreCopy, server, status, syncNow]
+    [
+      check,
+      connect,
+      disconnect,
+      hasCopy,
+      igdbRelay,
+      restoreCopy,
+      status,
+      syncNow,
+    ]
   );
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;

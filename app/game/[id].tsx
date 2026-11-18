@@ -8,7 +8,6 @@ import { StarRating } from "@/components/StarRating";
 import { StyledButton } from "@/components/StyledButton";
 import { StyledText } from "@/components/StyledText";
 import { useConfirm } from "@/contexts/ConfirmContext";
-import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
@@ -17,6 +16,7 @@ import { entryPlatforms, GAME_STATUSES, type Game } from "@/core/game";
 import { type GameDetails, getGameDetails } from "@/core/igdb";
 import { translateText } from "@/core/translate";
 import type { TranslationKey } from "@/core/translations";
+import { useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { openImageViewer } from "@/utils/navigation";
 import { n } from "@/utils/scaling";
 
@@ -26,7 +26,7 @@ export default function GameDetailScreen() {
   const { t, language } = useLanguage();
   const confirm = useConfirm();
   const { invertColors } = useInvertColors();
-  const { auth } = useCredentials();
+  const access = useIgdbAccess();
   const { getEntry, setStatus, setRating, togglePlatform, removeEntry } =
     useLibrary();
   const params = useLocalSearchParams<{ id: string; game?: string }>();
@@ -53,11 +53,11 @@ export default function GameDetailScreen() {
   } | null>(null);
 
   useEffect(() => {
-    if (!(parsedGame && auth)) {
+    if (!(parsedGame && access)) {
       return;
     }
     let active = true;
-    getGameDetails(parsedGame.id, auth)
+    getGameDetails(parsedGame.id, access)
       .then((details) => {
         if (active) {
           setLoaded({ details, gameId: parsedGame.id });
@@ -69,7 +69,7 @@ export default function GameDetailScreen() {
     return () => {
       active = false;
     };
-  }, [parsedGame, auth]);
+  }, [parsedGame, access]);
 
   const details =
     loaded && loaded.gameId === parsedGame?.id ? loaded.details : null;

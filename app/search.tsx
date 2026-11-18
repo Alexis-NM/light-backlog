@@ -8,13 +8,13 @@ import { yearOf } from "@/components/GameGrid";
 import { GameGridContainer } from "@/components/GameGridContainer";
 import { StyledText } from "@/components/StyledText";
 import { TextInput } from "@/components/TextInput";
-import { useCredentials } from "@/contexts/CredentialsContext";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { platformIdsFor } from "@/core/consoles";
 import type { Game } from "@/core/game";
 import { IgdbError, searchGames } from "@/core/igdb";
+import { refusedMessage, useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { n } from "@/utils/scaling";
 
@@ -22,7 +22,7 @@ type Phase = "idle" | "loading" | "done" | "error";
 
 export default function SearchScreen() {
   const { t } = useLanguage();
-  const { auth } = useCredentials();
+  const access = useIgdbAccess();
   const { invertColors } = useInvertColors();
   const { getEntry } = useLibrary();
   const [query, setQuery] = useState("");
@@ -39,7 +39,7 @@ export default function SearchScreen() {
     [getEntry]
   );
 
-  if (!auth) {
+  if (!access) {
     return (
       <ContentContainer headerTitle={t("search_title")}>
         <EmptyState
@@ -62,14 +62,14 @@ export default function SearchScreen() {
     try {
       const found = await searchGames(
         query,
-        auth,
+        access,
         platformIdsFor(selectedConsoles)
       );
       setResults(found);
       setPhase("done");
     } catch (error) {
       if (error instanceof IgdbError && error.kind === "auth") {
-        setErrorText(t("creds_invalid"));
+        setErrorText(t(refusedMessage(access)));
       } else if (error instanceof IgdbError && error.kind === "network") {
         setErrorText(t("network_error"));
       } else if (error instanceof IgdbError) {

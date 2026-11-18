@@ -7,6 +7,7 @@ import { StyledText } from "@/components/StyledText";
 import { TextInput } from "@/components/TextInput";
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSync } from "@/contexts/SyncContext";
 import { n } from "@/utils/scaling";
 
 const TWITCH_CONSOLE_URL = "https://dev.twitch.tv/console/apps/create";
@@ -15,6 +16,7 @@ export default function CredentialsScreen() {
   const { t } = useLanguage();
   const { auth, hasCredentials, setCredentials, clearCredentials } =
     useCredentials();
+  const { serverAddress } = useSync();
   const [clientId, setClientId] = useState(auth?.clientId ?? "");
   const [clientSecret, setClientSecret] = useState(auth?.clientSecret ?? "");
   const [message, setMessage] = useState("");
@@ -35,10 +37,25 @@ export default function CredentialsScreen() {
     setMessage("");
   };
 
+  // Keys entered here come first, then the sync server.
+  const describeAccess = () => {
+    if (hasCredentials) {
+      return t("creds_using_keys");
+    }
+    return serverAddress
+      ? t("creds_using_relay", { address: serverAddress })
+      : "";
+  };
+  const access = describeAccess();
+
   return (
     <ContentContainer headerTitle={t("creds_title")}>
       <View style={styles.body}>
         <StyledText style={styles.intro}>{t("creds_intro")}</StyledText>
+        <StyledText style={styles.intro}>{t("creds_order")}</StyledText>
+        {access.length > 0 ? (
+          <StyledText style={styles.message}>{access}</StyledText>
+        ) : null}
 
         <View style={styles.field}>
           <StyledText style={styles.label}>{t("creds_client_id")}</StyledText>

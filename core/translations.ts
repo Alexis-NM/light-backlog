@@ -48,7 +48,7 @@ const en = {
   games_choose_console: "Browse by console",
   games_no_creds: "IGDB credentials required",
   games_no_creds_hint:
-    "Add your IGDB credentials in Settings to browse and search games.",
+    "Add your IGDB credentials in Settings to browse and search games, or set up sync with a server that has its own.",
   games_set_up: "Set up credentials",
 
   // Lists
@@ -108,6 +108,7 @@ const en = {
     "Delete every game and list, here and on the sync server? This cannot be undone.",
   settings_creds_set: "Configured",
   settings_creds_not_set: "Not set",
+  settings_creds_relay: "Via the server",
   settings_sort_library: "Library sort",
   settings_sort_lists: "List sort",
   settings_backup: "Backup",
@@ -191,6 +192,11 @@ const en = {
   creds_help: "How to get credentials",
   creds_missing: "Enter both a Client ID and a Client Secret.",
   creds_invalid: "Could not authenticate. Check your credentials.",
+  creds_order:
+    "Without keys, Backlog goes through your sync server, if one is set: the server queries IGDB with its own keys. Keys entered here always come first.",
+  creds_using_keys: "IGDB is queried directly, with these keys.",
+  creds_using_relay: "IGDB is queried through {address}.",
+  igdb_relay_refused: "The sync server refused the token.",
 
   // Language
   language_en: "English",
@@ -259,7 +265,7 @@ const fr: Record<TranslationKey, string> = {
   games_choose_console: "Parcourir par console",
   games_no_creds: "Identifiants IGDB requis",
   games_no_creds_hint:
-    "Ajoute tes identifiants IGDB dans les Réglages pour parcourir et chercher des jeux.",
+    "Ajoute tes identifiants IGDB dans les Réglages pour parcourir et chercher des jeux, ou configure la synchro avec un serveur qui a les siens.",
   games_set_up: "Configurer les identifiants",
 
   // Lists
@@ -321,6 +327,7 @@ const fr: Record<TranslationKey, string> = {
     "Supprimer tous les jeux et listes, ici et sur le serveur de synchro ? Action irréversible.",
   settings_creds_set: "Configurés",
   settings_creds_not_set: "Non définis",
+  settings_creds_relay: "Via le serveur",
   settings_sort_library: "Tri biblio",
   settings_sort_lists: "Tri listes",
   settings_backup: "Sauvegarde",
@@ -407,6 +414,11 @@ const fr: Record<TranslationKey, string> = {
   creds_help: "Comment obtenir des identifiants",
   creds_missing: "Saisis un Client ID et un Client Secret.",
   creds_invalid: "Authentification impossible. Vérifie tes identifiants.",
+  creds_order:
+    "Sans clés, Backlog passe par ton serveur de synchro s'il est configuré : c'est lui qui interroge IGDB, avec ses propres clés. Les clés saisies ici passent toujours en premier.",
+  creds_using_keys: "IGDB est interrogé directement, avec ces clés.",
+  creds_using_relay: "IGDB est interrogé via {address}.",
+  igdb_relay_refused: "Le serveur de synchro refuse le jeton.",
 
   // Language
   language_en: "English",
