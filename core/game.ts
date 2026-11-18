@@ -73,15 +73,25 @@ export const LIBRARY_SORTS: SortMode[] = [
 
 export const LIST_SORTS: SortMode[] = ["alpha", "alpha_desc", "recent", "igdb"];
 
+export interface ListItem {
+  /** The "recent" sort shows the latest first. */
+  addedAt: number;
+  game: Game;
+}
+
 export interface GameList {
   consoles?: string[];
   createdAt: number;
-  gameIds: number[];
-  games: Record<number, Game>;
   id: string;
+  /** By game id. */
+  items: Record<number, ListItem>;
   name: string;
+  /** Lists are shown by ascending position. */
+  position: number;
   /** Overrides the global list sort for this list. */
   sort?: SortMode;
+  /** Last change to the list itself (name, consoles, sort, position), not to its games. */
+  updatedAt: number;
 }
 
 export interface Console {

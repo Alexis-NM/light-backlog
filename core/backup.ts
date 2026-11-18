@@ -1,13 +1,16 @@
 import {
   type Console,
   GAME_STATUSES,
+  type Game,
   type GameList,
   LIBRARY_SORTS,
   LIST_SORTS,
   type LibraryEntry,
+  type ListItem,
   type SortMode,
 } from "./game";
 import type { IgdbAuth } from "./igdb";
+import { type GameListV1, upgradeLists } from "./lists";
 import { type Language, translations } from "./translations";
 
 // A backup is one JSON document holding everything the app persists. JSON is
@@ -15,7 +18,8 @@ import { type Language, translations } from "./translations";
 // the file stays readable and diffable by the user.
 
 export const BACKUP_APP = "backlog";
-export const BACKUP_VERSION = 1;
+/** Version 2 dates lists and their games. Version 1 files are still read. */
+export const BACKUP_VERSION = 2;
 
 export interface BackupSettings {
   gamesFullscreen: boolean;
@@ -53,18 +57,10 @@ export class BackupError extends Error {
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const isGame = (value: unknown) =>
+const isGame = (value: unknown): value is Game =>
   isRecord(value) &&
   typeof value.id === "number" &&
   typeof value.name === "string";
-
-const isList = (value: unknown): value is GameList =>
-  isRecord(value) &&
-  typeof value.id === "string" &&
-  typeof value.name === "string" &&
-  Array.isArray(value.gameIds) &&
-  isRecord(value.games) &&
-  Object.values(value.games).every(isGame);
 
 const isEntry = (value: unknown): value is LibraryEntry =>
   isRecord(value) &&
@@ -110,6 +106,87 @@ function parseSettings(raw: Record<string, unknown>): Partial<BackupSettings> {
   };
 }
 
+const isConsoleNames = (value: unknown): value is string[] =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every((name) => typeof name === "string");
+
+/** A list's own settings: kept when valid, dropped otherwise. */
+const listOptions = (raw: Record<string, unknown>) => ({
+  consoles: isConsoleNames(raw.consoles) ? raw.consoles : undefined,
+  sort: asSort(raw.sort, LIST_SORTS),
+});
+
+/** As lenient as version 1 was: only what the conversion needs is checked. */
+function parseListV1(value: unknown): GameListV1 | undefined {
+  if (
+    !(
+      isRecord(value) &&
+      typeof value.id === "string" &&
+      typeof value.name === "string" &&
+      Array.isArray(value.gameIds) &&
+      isRecord(value.games) &&
+      Object.values(value.games).every(isGame)
+    )
+  ) {
+    return;
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    gameIds: value.gameIds,
+    games: value.games as Record<number, Game>,
+    // The app always wrote it; without it, the list counts as the oldest.
+    createdAt: typeof value.createdAt === "number" ? value.createdAt : 0,
+    ...listOptions(value),
+  };
+}
+
+const isItem = (value: unknown): value is ListItem =>
+  isRecord(value) && typeof value.addedAt === "number" && isGame(value.game);
+
+function parseList(value: unknown): GameList | undefined {
+  if (
+    !(
+      isRecord(value) &&
+      typeof value.id === "string" &&
+      typeof value.name === "string" &&
+      typeof value.createdAt === "number" &&
+      typeof value.updatedAt === "number" &&
+      typeof value.position === "number" &&
+      isRecord(value.items) &&
+      Object.entries(value.items).every(
+        ([key, item]) => isItem(item) && key === String(item.game.id)
+      )
+    )
+  ) {
+    return;
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+    position: value.position,
+    items: value.items as Record<number, ListItem>,
+    ...listOptions(value),
+  };
+}
+
+const isDefined = <T>(value: T | undefined): value is T => value !== undefined;
+
+function parseLists(version: unknown, raw: unknown[]): GameList[] | undefined {
+  if (version === 1) {
+    const lists = raw.map(parseListV1);
+    return lists.every(isDefined) ? upgradeLists(lists) : undefined;
+  }
+  if (version === BACKUP_VERSION) {
+    const lists = raw.map(parseList);
+    return lists.every(isDefined) ? lists : undefined;
+  }
+  return;
+}
+
 export function backupFileName(date = new Date()) {
   return `${BACKUP_APP}-backup-${date.toISOString().slice(0, 10)}.json`;
 }
@@ -118,7 +195,10 @@ export function serializeBackup(backup: Backup) {
   return JSON.stringify(backup, null, 2);
 }
 
-/** Validates everything a restore relies on; unknown or malformed settings are dropped. */
+/**
+ * Validates everything a restore relies on; unknown or malformed settings are
+ * dropped. A version 1 file comes out in the current format.
+ */
 export function parseBackup(text: string): Backup {
   let data: unknown;
   try {
@@ -130,9 +210,7 @@ export function parseBackup(text: string): Backup {
     !(
       isRecord(data) &&
       data.app === BACKUP_APP &&
-      data.version === BACKUP_VERSION &&
       Array.isArray(data.lists) &&
-      data.lists.every(isList) &&
       isRecord(data.library) &&
       Object.values(data.library).every(isEntry) &&
       isRecord(data.settings)
@@ -140,11 +218,15 @@ export function parseBackup(text: string): Backup {
   ) {
     throw new BackupError("invalid", "Not a Backlog backup.");
   }
+  const lists = parseLists(data.version, data.lists);
+  if (!lists) {
+    throw new BackupError("invalid", "Not a Backlog backup.");
+  }
   return {
     app: BACKUP_APP,
     version: BACKUP_VERSION,
     exportedAt: typeof data.exportedAt === "string" ? data.exportedAt : "",
-    lists: data.lists,
+    lists,
     library: data.library as Record<number, LibraryEntry>,
     settings: parseSettings(data.settings),
     credentials: isCredentials(data.credentials) ? data.credentials : undefined,

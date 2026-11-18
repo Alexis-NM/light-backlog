@@ -7,13 +7,16 @@ import {
   useMemo,
   useState,
 } from "react";
+import type { Game, GameList, SortMode, StoredRatings } from "@/core/game";
 import {
-  type Game,
-  type GameList,
-  type SortMode,
-  type StoredRatings,
-  sameRatings,
-} from "@/core/game";
+  reorderLists,
+  sortLists,
+  topPosition,
+  withFields,
+  withGames,
+  withoutGames,
+  withRatings,
+} from "@/core/lists";
 import {
   loadLists,
   removeAllLists,
@@ -72,47 +75,8 @@ function makeId() {
   return `list_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function withGames(list: GameList, games: Game[]): GameList {
-  const gamesMap = { ...list.games };
-  const newIds: number[] = [];
-  for (const game of games) {
-    if (!gamesMap[game.id]) {
-      gamesMap[game.id] = game;
-      newIds.push(game.id);
-    }
-  }
-  return { ...list, gameIds: [...newIds, ...list.gameIds], games: gamesMap };
-}
-
-function withRatings(
-  list: GameList,
-  ratings: Record<number, StoredRatings>
-): GameList {
-  let games: Record<number, Game> | null = null;
-  for (const [key, stored] of Object.entries(ratings)) {
-    const game = list.games[Number(key)];
-    if (game && !sameRatings(game, stored)) {
-      games ??= { ...list.games };
-      games[Number(key)] = { ...game, ...stored };
-    }
-  }
-  return games ? { ...list, games } : list;
-}
-
-function withoutGames(list: GameList, gameIds: number[]): GameList {
-  const idSet = new Set(gameIds);
-  const games = { ...list.games };
-  for (const id of gameIds) {
-    delete games[id];
-  }
-  return {
-    ...list,
-    gameIds: list.gameIds.filter((id) => !idSet.has(id)),
-    games,
-  };
-}
-
 export const ListsProvider = ({ children }: { children: ReactNode }) => {
+  // Always in display order.
   const [lists, setLists] = useState<GameList[]>([]);
 
   useEffect(() => {
@@ -125,7 +89,21 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const insertList = useCallback(
-    (list: GameList) => {
+    (name: string, games: Game[], consoles?: string[]) => {
+      const now = Date.now();
+      const list = withGames(
+        {
+          id: makeId(),
+          name: name.trim(),
+          items: {},
+          consoles: consoles && consoles.length > 0 ? consoles : undefined,
+          createdAt: now,
+          updatedAt: now,
+          position: topPosition(lists),
+        },
+        games,
+        now
+      );
       const next = [list, ...lists];
       setLists(next);
       saveList(list);
@@ -142,6 +120,9 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const updated = update(current);
+      if (updated === current) {
+        return;
+      }
       setLists(lists.map((list) => (list.id === id ? updated : list)));
       saveList(updated);
     },
@@ -149,53 +130,39 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const createList = useCallback(
-    (name: string) =>
-      insertList({
-        id: makeId(),
-        name: name.trim(),
-        gameIds: [],
-        games: {},
-        createdAt: Date.now(),
-      }),
+    (name: string) => insertList(name, []),
     [insertList]
   );
 
   const createListWithGames = useCallback(
     (name: string, games: Game[], consoles?: string[]) =>
-      insertList(
-        withGames(
-          {
-            id: makeId(),
-            name: name.trim(),
-            gameIds: [],
-            games: {},
-            consoles: consoles && consoles.length > 0 ? consoles : undefined,
-            createdAt: Date.now(),
-          },
-          games
-        )
-      ),
+      insertList(name, games, consoles),
     [insertList]
   );
 
   const renameList = useCallback(
     (id: string, name: string) =>
-      updateList(id, (list) => ({ ...list, name: name.trim() })),
+      updateList(id, (list) =>
+        withFields(list, { name: name.trim() }, Date.now())
+      ),
     [updateList]
   );
 
   const setListConsoles = useCallback(
     (id: string, consoles: string[]) =>
-      updateList(id, (list) => ({
-        ...list,
-        consoles: consoles.length > 0 ? consoles : undefined,
-      })),
+      updateList(id, (list) =>
+        withFields(
+          list,
+          { consoles: consoles.length > 0 ? consoles : undefined },
+          Date.now()
+        )
+      ),
     [updateList]
   );
 
   const setListSort = useCallback(
     (id: string, sort: SortMode) =>
-      updateList(id, (list) => ({ ...list, sort })),
+      updateList(id, (list) => withFields(list, { sort }, Date.now())),
     [updateList]
   );
 
@@ -211,30 +178,29 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
 
   const addGameToList = useCallback(
     (listId: string, game: Game) =>
-      updateList(listId, (list) => withGames(list, [game])),
+      updateList(listId, (list) => withGames(list, [game], Date.now())),
     [updateList]
   );
 
   const addGamesToList = useCallback(
     (listId: string, games: Game[]) =>
-      updateList(listId, (list) => withGames(list, games)),
+      updateList(listId, (list) => withGames(list, games, Date.now())),
     [updateList]
   );
 
   const moveList = useCallback(
     (id: string, direction: "down" | "up") => {
-      const index = lists.findIndex((list) => list.id === id);
-      if (index < 0) {
+      const next = reorderLists(lists, id, direction, Date.now());
+      if (next === lists) {
         return;
       }
-      const target = direction === "up" ? index - 1 : index + 1;
-      if (target < 0 || target >= lists.length) {
-        return;
-      }
-      const next = [...lists];
-      const [moved] = next.splice(index, 1);
-      next.splice(target, 0, moved);
+      const unchanged = new Set(lists);
       setLists(next);
+      for (const list of next) {
+        if (!unchanged.has(list)) {
+          saveList(list);
+        }
+      }
       saveListOrder(next);
     },
     [lists]
@@ -273,7 +239,8 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
   }, [lists]);
 
   const replaceAll = useCallback(
-    async (next: GameList[]) => {
+    async (restored: GameList[]) => {
+      const next = sortLists(restored);
       setLists(next);
       await removeAllLists(lists);
       await saveAllLists(next);

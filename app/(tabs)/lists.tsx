@@ -66,7 +66,7 @@ export default function ListsScreen() {
               {list.name}
             </StyledText>
             <StyledText style={styles.count}>
-              {t("list_count", { count: list.gameIds.length })}
+              {t("list_count", { count: Object.keys(list.items).length })}
               {list.consoles?.length ? ` · ${list.consoles.join(", ")}` : ""}
             </StyledText>
           </HapticPressable>

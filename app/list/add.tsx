@@ -121,7 +121,7 @@ export default function AddToListScreen() {
           <View style={styles.lists}>
             {visibleLists.map((list) => {
               const isMember =
-                !multi && game !== null && list.gameIds.includes(game.id);
+                !multi && game !== null && list.items[game.id] !== undefined;
               return (
                 <HapticPressable
                   key={list.id}

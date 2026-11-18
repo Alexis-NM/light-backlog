@@ -21,14 +21,13 @@ import {
   LIST_SORTS,
   type SortMode,
 } from "@/core/game";
+import { listGames } from "@/core/lists";
 import type { TranslationKey } from "@/core/translations";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
 
 function orderedGames(list: GameList, sort: SortMode) {
-  const games = list.gameIds
-    .map((gameId) => list.games[gameId])
-    .filter((game): game is Game => game !== undefined);
+  const games = listGames(list);
   if (sort === "recent") {
     return games;
   }

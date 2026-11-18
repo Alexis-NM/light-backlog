@@ -44,8 +44,8 @@ export function useIgdbRatingsBackfill() {
       consider(entry.game);
     }
     for (const list of allLists) {
-      for (const game of Object.values(list.games)) {
-        consider(game);
+      for (const item of Object.values(list.items)) {
+        consider(item.game);
       }
     }
     if (missing.length === 0) {
