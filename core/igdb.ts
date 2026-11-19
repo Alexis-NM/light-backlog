@@ -319,8 +319,9 @@ function mapGame(raw: RawGame): Game {
   return {
     id: raw.id,
     name: raw.name,
+    // In UTC, as IGDB dates it: the same year on every device and server.
     year: raw.first_release_date
-      ? new Date(raw.first_release_date * 1000).getFullYear()
+      ? new Date(raw.first_release_date * 1000).getUTCFullYear()
       : undefined,
     coverUrl: raw.cover?.image_id ? coverUrl(raw.cover.image_id) : undefined,
     platforms: platforms && platforms.length > 0 ? platforms : undefined,

@@ -240,6 +240,19 @@ describe("both accesses", () => {
   });
 });
 
+test("the year of a game is the same in every time zone", async () => {
+  // The last and the first half hour of a year, in UTC: read in local time,
+  // one of the two falls in the other year anywhere but in UTC.
+  answer(
+    json([
+      { id: 1, name: "New Year's Eve", first_release_date: 1_609_457_400 },
+      { id: 2, name: "New Year's Day", first_release_date: 1_609_459_200 },
+    ])
+  );
+  const games = await gamesById([1, 2], relay);
+  expect(games.map((game) => game.year)).toEqual([2020, 2021]);
+});
+
 describe("gamesById", () => {
   const fields =
     "fields name, first_release_date, cover.image_id, platforms.name, total_rating, rating, aggregated_rating;";
