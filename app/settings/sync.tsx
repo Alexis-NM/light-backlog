@@ -57,10 +57,16 @@ export default function SyncScreen() {
     }
     setBusy(true);
     setMessage(t(pending));
-    const problem = await action(address, token);
-    setBusy(false);
-    setMessage(problem ? t(problemKey(problem)) : done);
-    return problem === undefined;
+    try {
+      const problem = await action(address, token);
+      setMessage(problem ? t(problemKey(problem)) : done);
+      return problem === undefined;
+    } catch {
+      setMessage(t("error"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
   };
 
   const runCheck = () => tryServer(check, "sync_checking", t("sync_check_ok"));
@@ -79,7 +85,7 @@ export default function SyncScreen() {
       confirmText: t("sync_disconnect"),
       onConfirm: () => {
         setMessage("");
-        disconnect();
+        disconnect().catch(() => setMessage(t("error")));
       },
     });
 

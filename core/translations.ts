@@ -180,6 +180,8 @@ const en = {
   sync_err_rejected: "The server refused the data.",
   sync_err_server: "The server returned an error.",
   sync_err_copy: "Could not save a copy of the data: nothing was sent.",
+  sync_err_keychain:
+    "Could not store the token on this phone: nothing was sent.",
 
   // Sorting
   sort_alpha: "A-Z",
@@ -411,6 +413,8 @@ const fr: Record<TranslationKey, string> = {
   sync_err_server: "Le serveur a renvoyé une erreur.",
   sync_err_copy:
     "Impossible d'enregistrer une copie des données : rien n'a été envoyé.",
+  sync_err_keychain:
+    "Impossible d'enregistrer le jeton sur ce téléphone : rien n'a été envoyé.",
 
   // Sorting
   sort_alpha: "A-Z",

@@ -53,7 +53,7 @@ const RETRY_DELAYS_MS = [30_000, 60_000, 120_000, 300_000];
 const copyFile = () => new File(Paths.document, "backlog-before-sync.json");
 
 /** What can go wrong, for the screens to explain. */
-export type SyncProblem = SyncFailureKind | "address" | "copy";
+export type SyncProblem = SyncFailureKind | "address" | "copy" | "keychain";
 
 export interface SyncStatus {
   lastSyncedAt?: number;
@@ -285,18 +285,28 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         return problemOf(error);
       }
-      if (Object.keys(getEntries()).length > 0 || getLists().length > 0) {
-        try {
-          const file = copyFile();
+      const hasData =
+        Object.keys(getEntries()).length > 0 || getLists().length > 0;
+      try {
+        const file = copyFile();
+        if (hasData) {
           file.create({ overwrite: true });
           file.write(serializeBackup(buildBackup(false)));
-          setHasCopy(true);
-        } catch {
-          return "copy";
+        } else if (file.exists) {
+          // The copy of an earlier connection is not the data of before
+          // this one: restoring it would bring back what was cleared since.
+          file.delete();
         }
+        setHasCopy(hasData);
+      } catch {
+        return "copy";
       }
-      await setItemAsync(ENDPOINT_KEY, target.endpoint);
-      await setItemAsync(TOKEN_KEY, target.token);
+      try {
+        await setItemAsync(ENDPOINT_KEY, target.endpoint);
+        await setItemAsync(TOKEN_KEY, target.token);
+      } catch {
+        return "keychain";
+      }
       await setSyncState(newSyncState());
       switchTo(target);
       await runner.now(() => syncWith(target));
@@ -306,11 +316,13 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
 
   const disconnect = useCallback(async () => {
     runner.cancel();
-    await setSyncState(null);
+    // The token goes first: interrupted here, sync is off at the next
+    // launch. The other way round, it would start over on its own.
     await Promise.all([
       deleteItemAsync(ENDPOINT_KEY),
       deleteItemAsync(TOKEN_KEY),
     ]);
+    await setSyncState(null);
     switchTo(null);
     setStatus(OFF);
   }, [runner, switchTo]);
