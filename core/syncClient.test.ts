@@ -453,6 +453,22 @@ describe("syncOnce", () => {
     expect(tablet.local.library[1]).toBeDefined();
   });
 
+  test("a deletion made with the clock behind still reaches the server", async () => {
+    const server = fakeServer();
+    const tablet = device(sample());
+    await sync(tablet, server);
+    const phone = device();
+    await sync(phone, server);
+
+    // The tablet dated the entry 2100; the phone's clock says 1900.
+    deleteEntry(phone, 2, 1900);
+    await sync(phone, server);
+    expect(server.tables.entries.get("2")?.element.deletedAt).toBe(2101);
+
+    await sync(tablet, server);
+    expect(tablet.local.library[2]).toBeUndefined();
+  });
+
   test("a newer change elsewhere brings a deleted entry back", async () => {
     const server = fakeServer();
     const phone = device(sample());

@@ -11,6 +11,7 @@
 
 import { isRecord } from "./backup";
 import {
+  changeTime,
   GAME_STATUSES,
   type Game,
   type GameStatus,
@@ -112,9 +113,13 @@ export function mergeLatest<T extends Dated>(
   return merged;
 }
 
-/** A deletion is a change like any other: the element keeps its fields and takes the time. */
+/**
+ * A deletion is a change like any other: the element keeps its fields and
+ * takes the time, after the version deleted.
+ */
 export function markDeleted<T extends Dated>(element: T, now: number): T {
-  return { ...element, deletedAt: now, updatedAt: now };
+  const time = changeTime(now, element);
+  return { ...element, deletedAt: time, updatedAt: time };
 }
 
 // ---------------------------------------------------------------------------

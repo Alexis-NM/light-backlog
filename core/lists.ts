@@ -1,4 +1,5 @@
 import {
+  changeTime,
   type Game,
   type GameList,
   type ListItem,
@@ -147,7 +148,7 @@ export function withFields(
     next.name !== list.name ||
     next.sort !== list.sort ||
     !sameConsoles(next.consoles, list.consoles);
-  return changed ? { ...next, updatedAt: now } : list;
+  return changed ? { ...next, updatedAt: changeTime(now, list) } : list;
 }
 
 const compareIds = (a: string, b: string) => {
@@ -183,7 +184,7 @@ const renumbered = (ordered: GameList[], now: number) =>
   ordered.map((list, index) =>
     list.position === index
       ? list
-      : { ...list, position: index, updatedAt: now }
+      : { ...list, position: index, updatedAt: changeTime(now, list) }
   );
 
 /**
@@ -202,12 +203,15 @@ export function reorderLists(
   if (index < 0 || target < 0 || target >= ordered.length) {
     return lists;
   }
+  // Each one is dated after the version it had when the move began.
+  const movedAt = changeTime(now, ordered[index]);
+  const otherAt = changeTime(now, ordered[target]);
   const next = hasDistinctPositions(ordered)
     ? ordered
     : renumbered(ordered, now);
   const moved = next[index];
   const other = next[target];
-  next[index] = { ...other, position: moved.position, updatedAt: now };
-  next[target] = { ...moved, position: other.position, updatedAt: now };
+  next[index] = { ...other, position: moved.position, updatedAt: otherAt };
+  next[target] = { ...moved, position: other.position, updatedAt: movedAt };
   return next;
 }

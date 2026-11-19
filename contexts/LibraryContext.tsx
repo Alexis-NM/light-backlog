@@ -6,6 +6,7 @@ import {
   useMemo,
 } from "react";
 import {
+  changeTime,
   entryPlatforms,
   type Game,
   type GameStatus,
@@ -90,7 +91,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
         rating: existing?.rating ?? 0,
         platforms: existing ? entryPlatforms(existing) : [],
         addedAt: existing?.addedAt ?? now,
-        updatedAt: now,
+        updatedAt: changeTime(now, existing),
         ...patch,
       };
       change({ ...current, [game.id]: next });
@@ -149,7 +150,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
           rating: existing?.rating ?? 0,
           platforms: merged,
           addedAt: existing?.addedAt ?? now,
-          updatedAt: now,
+          updatedAt: changeTime(now, existing),
         };
       }
       change(next);
@@ -188,7 +189,11 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       for (const id of ids) {
         const existing = next[id];
         if (existing) {
-          next[id] = { ...existing, status, updatedAt: now };
+          next[id] = {
+            ...existing,
+            status,
+            updatedAt: changeTime(now, existing),
+          };
         }
       }
       change(next);

@@ -110,6 +110,13 @@ describe("markDeleted", () => {
     expect(supersedes(readded, deleted)).toBe(true);
     expect(supersedes(entry, deleted)).toBe(false);
   });
+
+  test("a deletion made with the clock behind still beats the element", () => {
+    const deleted = markDeleted(entry, entry.updatedAt - 1000);
+    expect(deleted.deletedAt).toBe(entry.updatedAt + 1);
+    expect(deleted.updatedAt).toBe(entry.updatedAt + 1);
+    expect(supersedes(deleted, entry)).toBe(true);
+  });
 });
 
 describe("mergeLatest", () => {

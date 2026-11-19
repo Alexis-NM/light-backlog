@@ -177,6 +177,11 @@ describe("withFields", () => {
     expect(withFields(before, { sort: "alpha" }, 2000).updatedAt).toBe(2000);
   });
 
+  test("dates the change after the list when the clock is behind", () => {
+    const before = list("list_1", 0, { updatedAt: 3000 });
+    expect(withFields(before, { name: "Next" }, 2000).updatedAt).toBe(3001);
+  });
+
   test("leaves the list unchanged when nothing changes", () => {
     const before = list("list_1", 0, { consoles: ["Wii", "GameCube"] });
     const same = withFields(
@@ -211,6 +216,39 @@ describe("list order", () => {
     expect(next[0]).toBe(before[0]);
     expect(next[1].updatedAt).toBe(2000);
     expect(next[2].updatedAt).toBe(2000);
+  });
+
+  test("a move made with the clock behind is dated after each list moved", () => {
+    const before = [
+      list("a", 0, { updatedAt: 3000 }),
+      list("b", 1, { updatedAt: 1500 }),
+    ];
+    const next = reorderLists(before, "b", "up", 2000);
+    expect(next.map((item) => [item.id, item.updatedAt])).toEqual([
+      ["b", 2000],
+      ["a", 3001],
+    ]);
+  });
+
+  test("lists renumbered then moved are dated once", () => {
+    const next = reorderLists(
+      [
+        list("a", 0, { updatedAt: 3000 }),
+        list("b", 0, { updatedAt: 3000 }),
+        list("c", 0, { updatedAt: 3000 }),
+      ],
+      "c",
+      "up",
+      2000
+    );
+    expect(next.map((item) => [item.id, item.position])).toEqual([
+      ["a", 0],
+      ["c", 1],
+      ["b", 2],
+    ]);
+    expect(next[0].updatedAt).toBe(3000);
+    expect(next[1].updatedAt).toBe(3001);
+    expect(next[2].updatedAt).toBe(3001);
   });
 
   test("a list cannot move past either end", () => {

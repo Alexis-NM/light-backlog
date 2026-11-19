@@ -61,6 +61,16 @@ export function entryPlatforms(entry: LibraryEntry): string[] {
   return entry.platform ? [entry.platform] : [];
 }
 
+/**
+ * The time of a change made now: after the version it replaces, even when
+ * this clock is behind the one that dated that version. Dated before it, the
+ * change would lose to the version it replaces on every other device.
+ */
+export const changeTime = (
+  now: number,
+  previous?: { updatedAt: number }
+): number => (previous ? Math.max(now, previous.updatedAt + 1) : now);
+
 export type SortMode = "alpha" | "alpha_desc" | "igdb" | "rating" | "recent";
 
 export const LIBRARY_SORTS: SortMode[] = [
