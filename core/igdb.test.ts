@@ -149,6 +149,41 @@ describe("directly with keys", () => {
   });
 });
 
+describe("a request that gets no answer", () => {
+  /** Never answers: only giving up ends it, as an unreachable server would. */
+  const silent = () => {
+    calls = [];
+    globalThis.fetch = ((url: string, init: RequestInit) => {
+      calls.push({ url: String(url), init });
+      return new Promise((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () =>
+          reject(new DOMException("Aborted", "AbortError"))
+        );
+      });
+    }) as unknown as typeof fetch;
+  };
+
+  test("can be given up on, through a server, with keys and at Twitch", async () => {
+    answer(json([zelda]));
+    await searchGames("zelda", relay);
+    expect(calls[0].init.signal).toBeInstanceOf(AbortSignal);
+
+    answer(twitch, json([zelda]));
+    await searchGames("zelda", keys);
+    expect(calls[0].init.signal).toBeInstanceOf(AbortSignal);
+    expect(calls[1].init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  test("ends as an unreachable server once given up on", async () => {
+    silent();
+    const pending = kindOf(() => searchGames("zelda", relay));
+    // The 30 s are not waited for here: the request is given up on by hand.
+    await Promise.resolve();
+    (calls[0].init.signal as AbortSignal).dispatchEvent(new Event("abort"));
+    expect(await pending).toBe("network");
+  });
+});
+
 describe("queryIgdb", () => {
   test("gives IGDB's answer as is, for a server to relay", async () => {
     const raw = [{ id: 1, total_rating: 80.5 }];

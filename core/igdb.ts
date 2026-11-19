@@ -102,6 +102,22 @@ const SEARCH_SPACING_MS = 260;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
+/**
+ * fetch that gives up after 30 s, as an unreachable server would: React
+ * Native waits for an answer forever by default.
+ */
+async function fetchInTime(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const roundRating = (value: number | undefined) =>
   typeof value === "number" ? Math.round(value) : undefined;
 
@@ -142,7 +158,7 @@ async function getToken(auth: IgdbAuth): Promise<string> {
 
   let response: Response;
   try {
-    response = await fetch(url, { method: "POST" });
+    response = await fetchInTime(url, { method: "POST" });
   } catch {
     throw new IgdbError("network", "Failed to reach Twitch.");
   }
@@ -179,7 +195,7 @@ async function direct<T>(
 
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/${endpoint}`, {
+    response = await fetchInTime(`${API_URL}/${endpoint}`, {
       method: "POST",
       headers: {
         "Client-ID": auth.clientId,
@@ -251,7 +267,7 @@ async function relay<T>(
 
   let response: Response;
   try {
-    response = await fetch(`${server}/api/igdb/${endpoint}`, {
+    response = await fetchInTime(`${server}/api/igdb/${endpoint}`, {
       method: "POST",
       headers,
       body,
