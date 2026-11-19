@@ -70,8 +70,10 @@ Search and browsing need free IGDB credentials (a Twitch application):
 2. Copy the **Client ID** and generate a **Client Secret**.
 3. In the app: **Settings → IGDB Credentials**, paste both, and save.
 
-Credentials are stored on-device with `expo-secure-store` and never leave it.
-Your library and lists are stored locally (`AsyncStorage`) and work offline.
+Credentials are stored on-device with `expo-secure-store`. They leave it only
+for Twitch, to sign in to IGDB, and for a backup when you choose to include
+them. Your library and lists are stored locally (`AsyncStorage`) and work
+offline.
 They stay on the device unless you set up a sync server.
 
 Without credentials, the app goes through your sync server if one is set
@@ -153,7 +155,8 @@ from `app.json` and the config plugins by `expo prebuild`, as the release
 workflow does.
 
 The logic that does not depend on React Native or Expo (data types, IGDB
-client, list import, backup format, translations, consoles) lives in `core/`:
+client, list import, backup format, sync protocol, translations, consoles)
+lives in `core/`:
 plain TypeScript with no dependency, whose files import each other with
 relative paths (`bun run check` enforces both).
 

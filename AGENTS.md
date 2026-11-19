@@ -1,5 +1,5 @@
-# App Template
-Expo template with pre-built components and patterns.
+# Backlog
+A video game tracker for the Light Phone III (Expo, expo-router), built on [light-template](https://github.com/vandamd/light-template): its components and patterns are described below.
 
 ## Rules
 - Use `n()` for all numeric style values
@@ -25,21 +25,8 @@ Expo template with pre-built components and patterns.
 - `bun run check` enforces both rules (override in `biome.jsonc`).
 - Device code stays out of core: storage, secure store, file pickers (`services/libraryStorage.ts`, `services/listStorage.ts`, `services/backupFile.ts`, `contexts/`). Each library entry and each list has its own storage key (`entry:<game id>`, `list:<id>`): a change rewrites only what it touches. Saved data that cannot be read is never taken for no data: the library and the lists then refuse changes (`unreadable`) and nothing is written over them. A save nobody waits for goes through `saveInBackground` (`services/saveFailures.ts`), so that its failure shows on every screen. `plugins/withAsyncStorageSize.js` raises AsyncStorage's limit from 6 MB to 50 MB; a single value (one list, with its games) still has to stay under 2 MB to be read back. For sync, `services/syncStore.ts` keeps the cursor, the versions the server has and the deletion markers (recorded only while sync is on), and passes the user's changes and the screens coming into view (`hooks/useSyncOnFocus.ts`) on to the sync; `contexts/SyncContext.tsx` holds the server, the triggers and the status.
 
-## Setup
-Update `app.json`:
-```json
-{
-  "expo": {
-    "name": "App Name",
-    "slug": "appname",
-    "icon": "./assets/icon.png",
-    "android": {
-      "package": "com.vandam.appname"
-    }
-  }
-}
-```
-Delete `/android` folder before first build (regenerates with your config).
+## Native project
+`/android` is not committed: `expo prebuild` generates it from `app.json` and the config plugins in `plugins/`. Delete it after changing either, so that it is generated again. `app.json` blocks the Android permissions the Expo template declares and the app does not use (`blockedPermissions`).
 
 ## GitHub Actions
 Workflow at `.github/workflows/build.yml` builds APK and creates release:
@@ -114,7 +101,7 @@ Settings use nested routes:
 ```
 app/(tabs)/settings.tsx         → Main settings page
 app/settings/customise.tsx      → Customise options
-app/settings/option-example.tsx → Options page (example)
+app/settings/sort-library.tsx   → Options page (example)
 ```
 
 Use `SelectorButton` + `OptionsSelector` for option pickers:
@@ -126,7 +113,7 @@ Use `SelectorButton` + `OptionsSelector` for option pickers:
     href="/settings/option-example"
 />
 
-// In options page (app/settings/option-example.tsx)
+// In the options page, such as app/settings/sort-library.tsx
 <OptionsSelector
     title="Option Example"
     options={[{ label: "Standard", value: "standard" }, ...]}
@@ -149,9 +136,14 @@ confirm({
 ```
 
 ## Contexts
-Wrapped in `app/_layout.tsx`:
+Wrapped in `app/_layout.tsx`, outermost first:
 - `InvertColorsContext` - Theme toggle (black/white), persists to AsyncStorage
-- `OptionExampleContext` - Example setting context (see `app/settings/option-example.tsx`)
+- `LanguageContext` - English / French, and `t()`
+- `CredentialsContext` - IGDB keys, in the secure store
+- `LibraryContext`, `ListsContext` - The library and the lists, their changes and their storage
+- `BrowseContext`, `FullscreenContext`, `SortContext` - Settings of the screens
+- `SyncContext` - The sync server, when one is set
+- `ConfirmContext` - The confirmation screen
 
 Use: `const { invertColors } = useInvertColors();`
 
