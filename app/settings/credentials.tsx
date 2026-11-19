@@ -18,15 +18,17 @@ export default function CredentialsScreen() {
     useCredentials();
   const { serverAddress } = useSync();
   const [clientId, setClientId] = useState(auth?.clientId ?? "");
-  const [clientSecret, setClientSecret] = useState(auth?.clientSecret ?? "");
+  // The secret saved is never shown again: left empty, it is kept as it is.
+  const [clientSecret, setClientSecret] = useState("");
   const [message, setMessage] = useState("");
 
   const save = async () => {
-    if (clientId.trim().length === 0 || clientSecret.trim().length === 0) {
+    const secret = clientSecret.trim() || auth?.clientSecret || "";
+    if (clientId.trim().length === 0 || secret.length === 0) {
       setMessage(t("creds_missing"));
       return;
     }
-    await setCredentials(clientId.trim(), clientSecret.trim());
+    await setCredentials(clientId.trim(), secret);
     router.back();
   };
 
@@ -72,7 +74,12 @@ export default function CredentialsScreen() {
           </StyledText>
           <TextInput
             onChangeText={setClientSecret}
-            placeholder={t("creds_client_secret_ph")}
+            placeholder={t(
+              hasCredentials
+                ? "creds_client_secret_saved"
+                : "creds_client_secret_ph"
+            )}
+            secret
             value={clientSecret}
           />
         </View>

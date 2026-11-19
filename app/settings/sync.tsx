@@ -156,6 +156,7 @@ export default function SyncScreen() {
               <TextInput
                 onChangeText={setToken}
                 placeholder={t("sync_token_ph")}
+                secret
                 value={token}
               />
             </View>

@@ -9,6 +9,8 @@ interface TextInputProps {
   onChangeText: (text: string) => void;
   onSubmit?: () => void;
   placeholder: string;
+  /** A token or a key: shown as dots, and kept out of the keyboard's memory. */
+  secret?: boolean;
   value: string;
 }
 
@@ -22,6 +24,7 @@ export function TextInput({
   placeholder,
   onSubmit,
   autoFocus = false,
+  secret = false,
 }: TextInputProps) {
   const { invertColors } = useInvertColors();
 
@@ -45,6 +48,7 @@ export function TextInput({
         placeholder={placeholder}
         placeholderTextColor={placeholderColor(invertColors)}
         returnKeyType="search"
+        secureTextEntry={secret}
         selectionColor={textColor}
         style={[styles.input, { color: textColor }]}
         value={value}
