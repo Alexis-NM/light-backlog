@@ -209,13 +209,15 @@ the GitHub release. No Expo account is needed.
 The signing key lives in two repository secrets, which only that second job
 reads: `ANDROID_KEYSTORE_BASE64` (the keystore, in base64) and
 `ANDROID_KEYSTORE_PASSWORD`. Without them the workflow stops before the
-build. To create them, once:
+build. To create them, once, in a terminal that can ask you the password
+(each step runs only if the one before went through; an empty secret counts
+as a missing one):
 
 ```bash
 keytool -genkeypair -storetype PKCS12 -keystore backlog-release.keystore \
-  -alias backlog -keyalg RSA -keysize 4096 -validity 10000
-base64 -i backlog-release.keystore | gh secret set ANDROID_KEYSTORE_BASE64
-gh secret set ANDROID_KEYSTORE_PASSWORD
+  -alias backlog -keyalg RSA -keysize 4096 -validity 10000 &&
+  base64 -i backlog-release.keystore | gh secret set ANDROID_KEYSTORE_BASE64 &&
+  gh secret set ANDROID_KEYSTORE_PASSWORD
 ```
 
 Keep the keystore and its password somewhere safe, outside the repository:
