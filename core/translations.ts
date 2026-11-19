@@ -68,13 +68,10 @@ const en = {
   list_empty: "This list is empty.",
   list_count: "{count} games",
   list_add_to: "Add to a list",
-  list_added: "Added",
   list_remove_from: "Remove from list",
-  list_pick: "Pick a list",
   list_none: "You have no lists yet.",
 
   // Import
-  list_import: "Import",
   import_title: "Import a list",
   import_source_label: "Paste the list (CSV / Markdown / one per line)",
   import_source_ph: "One game per line…",
@@ -96,8 +93,8 @@ const en = {
   import_more: "+{count} more",
   list_consoles: "Consoles",
   list_sort: "Sort",
-  list_add_all: "Add all to library",
   list_add_to_library: "Add to library",
+  // Not used by the app: the site reads it (core/ is shared).
   list_rename: "Rename list",
   list_options: "List options",
   list_move_up: "Move up",
@@ -297,13 +294,10 @@ const fr: Record<TranslationKey, string> = {
   list_empty: "Cette liste est vide.",
   list_count: "{count} jeux",
   list_add_to: "Ajouter à une liste",
-  list_added: "Ajouté",
   list_remove_from: "Retirer de la liste",
-  list_pick: "Choisis une liste",
   list_none: "Tu n'as pas encore de liste.",
 
   // Import
-  list_import: "Importer",
   import_title: "Importer une liste",
   import_source_label: "Colle la liste (CSV / Markdown / un par ligne)",
   import_source_ph: "Un jeu par ligne…",
@@ -326,7 +320,6 @@ const fr: Record<TranslationKey, string> = {
   import_more: "+{count} de plus",
   list_consoles: "Consoles",
   list_sort: "Tri",
-  list_add_all: "Tout ajouter à la bibliothèque",
   list_add_to_library: "Ajouter à la bibliothèque",
   list_rename: "Renommer la liste",
   list_options: "Options de la liste",
