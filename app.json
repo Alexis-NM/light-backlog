@@ -22,6 +22,7 @@
       ],
       "./plugins/withAndroidConfigChanges",
       "./plugins/withAndroidTheme",
+      "./plugins/withAsyncStorageSize",
       "expo-image"
     ],
     "experiments": {

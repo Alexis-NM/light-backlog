@@ -4,6 +4,7 @@ import type { GameList } from "@/core/game";
 // In-memory AsyncStorage: the real one needs React Native.
 const store = new Map<string, string>();
 let failWrites = false;
+let failReads = false;
 const write = (pairs: [string, string][]) => {
   if (failWrites) {
     return Promise.reject(new Error("Disk full"));
@@ -21,7 +22,9 @@ const fakeStorage = {
     return Promise.resolve();
   },
   multiGet: (keys: string[]) =>
-    Promise.resolve(keys.map((key) => [key, store.get(key) ?? null])),
+    failReads
+      ? Promise.reject(new Error("Row too big to fit into CursorWindow"))
+      : Promise.resolve(keys.map((key) => [key, store.get(key) ?? null])),
   multiSet: write,
   multiRemove: (keys: string[]) => {
     for (const key of keys) {
@@ -63,6 +66,7 @@ const storeOldLists = () => {
 beforeEach(() => {
   store.clear();
   failWrites = false;
+  failReads = false;
 });
 
 describe("loadLists", () => {
@@ -127,5 +131,13 @@ describe("loadLists", () => {
     failWrites = false;
     expect(await loadLists()).toEqual(first);
     expect(stored("list:list_b")).toEqual(first[0]);
+  });
+
+  test("fails, rather than give no lists, when they cannot be read, and leaves them stored", async () => {
+    storeOldLists();
+    failReads = true;
+    await expect(loadLists()).rejects.toThrow("Row too big");
+    expect(stored("lists:order")).toEqual(["list_b", "list_a"]);
+    expect(stored("list:list_b")).toEqual(oldLists[0]);
   });
 });

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { type Href, router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
@@ -66,7 +66,7 @@ export default function LibraryScreen() {
   useSyncOnFocus();
   const { t } = useLanguage();
   const confirm = useConfirm();
-  const { entries, setStatusMany, removeMany } = useLibrary();
+  const { entries, setStatusMany, removeMany, unreadable } = useLibrary();
   const { libraryFullscreen, setLibraryFullscreen } = useFullscreen();
   const { librarySort } = useSort();
   const [filters, setFilters] = usePersistedState<LibraryFilters>(
@@ -182,6 +182,20 @@ export default function LibraryScreen() {
       },
     });
   };
+
+  if (unreadable) {
+    return (
+      <ContentContainer headerTitle={t("library_title")} hideBackButton>
+        <EmptyState
+          actionText={t("settings_backup")}
+          hint={t("storage_unreadable_hint")}
+          icon="error-outline"
+          onAction={() => router.push("/settings/backup" as Href)}
+          title={t("library_unreadable")}
+        />
+      </ContentContainer>
+    );
+  }
 
   if (sorted.length === 0) {
     return (

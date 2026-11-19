@@ -16,6 +16,7 @@ import {
 } from "@/core/game";
 import { deletedEntries } from "@/core/syncClient";
 import { usePersistedState } from "@/hooks/usePersistedState";
+import { saveInBackground } from "@/services/saveFailures";
 import { notifyLocalChange, recordDeletions } from "@/services/syncStore";
 
 type Entries = Record<number, LibraryEntry>;
@@ -41,11 +42,14 @@ interface LibraryContextType {
   setStatus: (game: Game, status: GameStatus) => void;
   setStatusMany: (ids: number[], status: GameStatus) => void;
   togglePlatform: (game: Game, platform: string) => void;
+  /** The saved library is there but could not be read: nothing changes it. */
+  unreadable: boolean;
 }
 
 const LibraryContext = createContext<LibraryContextType>({
   entries: {},
   loaded: false,
+  unreadable: false,
   getEntry: () => undefined,
   getEntries: () => ({}),
   setStatus: () => undefined,
@@ -65,19 +69,35 @@ const LibraryContext = createContext<LibraryContextType>({
 export const useLibrary = () => useContext(LibraryContext);
 
 export const LibraryProvider = ({ children }: { children: ReactNode }) => {
-  const [entries, setEntries, { getLatest, loaded }] =
+  const [entries, setEntries, { getLatest, loaded, unreadable }] =
     usePersistedState<Entries>("library", {});
 
   // Changes start from the latest entries, not the rendered ones, so that a
   // sync and a tap in the same tick cannot undo each other.
 
-  /** A change the user makes: the sync sends it a moment later. */
+  /** Shown at once, saved in the background. */
+  const save = useCallback(
+    (next: Entries) => saveInBackground(setEntries(next)),
+    [setEntries]
+  );
+
+  /**
+   * A change the user makes, with the entries it removes: the sync sends it
+   * a moment later. Refused until the saved library has been read: it would
+   * be written over it.
+   */
   const change = useCallback(
-    (next: Entries) => {
-      setEntries(next);
+    (next: Entries, removed: LibraryEntry[] = []) => {
+      if (!loaded) {
+        return;
+      }
+      if (removed.length > 0) {
+        recordDeletions(deletedEntries(removed, Date.now()));
+      }
+      save(next);
       notifyLocalChange();
     },
-    [setEntries]
+    [loaded, save]
   );
 
   const upsert = useCallback(
@@ -167,12 +187,11 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
       if (removed.length === 0) {
         return;
       }
-      recordDeletions(deletedEntries(removed, Date.now()));
       const next = { ...current };
       for (const entry of removed) {
         delete next[entry.game.id];
       }
-      change(next);
+      change(next, removed);
     },
     [change, getLatest]
   );
@@ -216,18 +235,20 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       if (changed) {
-        setEntries(next);
+        save(next);
       }
     },
-    [getLatest, setEntries]
+    [getLatest, save]
   );
 
-  const clearAll = useCallback(() => {
-    recordDeletions(deletedEntries(Object.values(getLatest()), Date.now()));
-    change({});
-  }, [change, getLatest]);
+  const clearAll = useCallback(
+    () => change({}, Object.values(getLatest())),
+    [change, getLatest]
+  );
 
-  // A restore turns sync off first: it records no deletion.
+  // A restore turns sync off first: it records no deletion. It goes through
+  // even over a library that could not be read, and its failure is the
+  // caller's to tell.
   const replaceAll = useCallback(
     (next: Entries) => setEntries(next),
     [setEntries]
@@ -236,10 +257,10 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
   const commitFromSync = useCallback(
     (next: Entries) => {
       if (next !== getLatest()) {
-        setEntries(next);
+        save(next);
       }
     },
-    [getLatest, setEntries]
+    [getLatest, save]
   );
 
   const getEntry = useCallback((id: number) => entries[id], [entries]);
@@ -248,6 +269,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       entries,
       loaded,
+      unreadable,
       getEntry,
       getEntries: getLatest,
       setStatus,
@@ -266,6 +288,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
     [
       entries,
       loaded,
+      unreadable,
       getEntry,
       getLatest,
       setStatus,

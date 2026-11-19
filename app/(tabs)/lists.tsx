@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { type Href, router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
@@ -13,7 +13,21 @@ import { n } from "@/utils/scaling";
 export default function ListsScreen() {
   useSyncOnFocus();
   const { t } = useLanguage();
-  const { lists } = useLists();
+  const { lists, unreadable } = useLists();
+
+  if (unreadable) {
+    return (
+      <ContentContainer headerTitle={t("lists_title")} hideBackButton>
+        <EmptyState
+          actionText={t("settings_backup")}
+          hint={t("storage_unreadable_hint")}
+          icon="error-outline"
+          onAction={() => router.push("/settings/backup" as Href)}
+          title={t("lists_unreadable")}
+        />
+      </ContentContainer>
+    );
+  }
 
   if (lists.length === 0) {
     return (

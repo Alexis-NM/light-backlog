@@ -8,6 +8,10 @@ const en = {
   loading: "Loading…",
   error: "Error",
   network_error: "Network error. Check your connection.",
+  storage_unreadable_hint:
+    "Nothing was erased. Restart the app; if it stays this way, restore a backup.",
+  storage_save_failed:
+    "A change could not be saved. Export a backup from Settings before closing the app.",
 
   // Statuses
   status_playing: "Playing",
@@ -20,6 +24,7 @@ const en = {
   library_title: "Library",
   library_empty: "Your library is empty",
   library_empty_hint: "Search for games to start tracking them.",
+  library_unreadable: "Your library could not be read",
   library_selected: "{count} selected",
   library_remove_confirm: "Remove the selected games from your library?",
 
@@ -55,6 +60,7 @@ const en = {
   lists_title: "Lists",
   lists_empty: "No lists yet",
   lists_empty_hint: "Create a list to group games your way.",
+  lists_unreadable: "Your lists could not be read",
   list_new: "New list",
   list_name_placeholder: "List name…",
   list_delete_confirm: "Delete this list? The games stay in your library.",
@@ -225,6 +231,10 @@ const fr: Record<TranslationKey, string> = {
   loading: "Chargement…",
   error: "Erreur",
   network_error: "Erreur réseau. Vérifie ta connexion.",
+  storage_unreadable_hint:
+    "Rien n'a été effacé. Relance l'appli ; si rien ne change, restaure une sauvegarde.",
+  storage_save_failed:
+    "Un changement n'a pas pu être enregistré. Exporte une sauvegarde depuis les réglages avant de fermer l'appli.",
 
   // Statuses
   status_playing: "En cours",
@@ -237,6 +247,7 @@ const fr: Record<TranslationKey, string> = {
   library_title: "Bibliothèque",
   library_empty: "Ta bibliothèque est vide",
   library_empty_hint: "Cherche des jeux pour commencer à les suivre.",
+  library_unreadable: "Ta bibliothèque n'a pas pu être lue",
   library_selected: "{count} sélectionnés",
   library_remove_confirm: "Retirer les jeux sélectionnés de ta bibliothèque ?",
 
@@ -272,6 +283,7 @@ const fr: Record<TranslationKey, string> = {
   lists_title: "Listes",
   lists_empty: "Aucune liste",
   lists_empty_hint: "Crée une liste pour regrouper les jeux à ta façon.",
+  lists_unreadable: "Tes listes n'ont pas pu être lues",
   list_new: "Nouvelle liste",
   list_name_placeholder: "Nom de la liste…",
   list_delete_confirm:

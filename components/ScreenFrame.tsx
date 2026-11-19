@@ -2,8 +2,11 @@ import { router, useSegments } from "expo-router";
 import type { ReactNode } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { Header, type RightAction } from "@/components/Header";
+import { StyledText } from "@/components/StyledText";
 import { SwipeBackContainer } from "@/components/SwipeBackContainer";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useSaveFailed } from "@/hooks/useSaveFailed";
 import type { ScrollIndicator } from "@/hooks/useScrollIndicator";
 import { n } from "@/utils/scaling";
 
@@ -46,6 +49,8 @@ export function ScreenFrame({
   const segments = useSegments();
   const hasNavbar = segments?.[0] === "(tabs)";
   const { invertColors } = useInvertColors();
+  const { t } = useLanguage();
+  const saveFailed = useSaveFailed();
   const foreground = invertColors ? "black" : "white";
   const canSwipeBack = Boolean(headerTitle) && !hideBackButton;
 
@@ -65,6 +70,11 @@ export function ScreenFrame({
             rightActions={rightActions}
           />
         )}
+        {saveFailed ? (
+          <StyledText style={[styles.notice, horizontalPadding(contentWidth)]}>
+            {t("storage_save_failed")}
+          </StyledText>
+        ) : null}
         {stickyTop ? (
           <View style={[styles.stickyTop, horizontalPadding(contentWidth)]}>
             {stickyTop}
@@ -127,5 +137,10 @@ const styles = StyleSheet.create({
   },
   stickyTop: {
     width: "100%",
+  },
+  notice: {
+    width: "100%",
+    fontSize: n(14),
+    lineHeight: n(19),
   },
 });

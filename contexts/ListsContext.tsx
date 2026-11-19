@@ -27,6 +27,7 @@ import {
   saveList,
   saveListOrder,
 } from "@/services/listStorage";
+import { saveInBackground } from "@/services/saveFailures";
 import { notifyLocalChange, recordDeletions } from "@/services/syncStore";
 
 interface ListsContextType {
@@ -57,11 +58,14 @@ interface ListsContextType {
   setIgdbRatings: (ratings: Record<number, StoredRatings>) => void;
   setListConsoles: (id: string, consoles: string[]) => void;
   setListSort: (id: string, sort: SortMode) => void;
+  /** The saved lists are there but could not be read: nothing changes them. */
+  unreadable: boolean;
 }
 
 const ListsContext = createContext<ListsContextType>({
   lists: [],
   loaded: false,
+  unreadable: false,
   getList: () => undefined,
   getLists: () => [],
   createList: () => "",
@@ -93,21 +97,22 @@ function saveChanges(before: GameList[], after: GameList[]) {
   const kept = new Set(after.map((list) => list.id));
   for (const list of after) {
     if (previous.get(list.id) !== list) {
-      saveList(list);
+      saveInBackground(saveList(list));
     }
   }
   for (const list of before) {
     if (!kept.has(list.id)) {
-      removeList(list.id);
+      saveInBackground(removeList(list.id));
     }
   }
-  saveListOrder(after);
+  saveInBackground(saveListOrder(after));
 }
 
 export const ListsProvider = ({ children }: { children: ReactNode }) => {
   // Always in display order.
   const [lists, setLists] = useState<GameList[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [unreadable, setUnreadable] = useState(false);
   // Changes start from the latest lists, not the rendered ones, so that a
   // sync and a tap in the same tick cannot undo each other.
   const latest = useRef(lists);
@@ -127,10 +132,13 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
   );
 
   useEffect(() => {
-    loadLists().then((stored) => {
-      commit(stored);
-      setLoaded(true);
-    });
+    loadLists()
+      .then((stored) => {
+        commit(stored);
+        setLoaded(true);
+      })
+      // They stay as they are in storage, and nothing is written over them.
+      .catch(() => setUnreadable(true));
   }, [commit]);
 
   const getList = useCallback(
@@ -142,6 +150,10 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
 
   const insertList = useCallback(
     (name: string, games: Game[], consoles?: string[]) => {
+      // Before the saved lists are read, a new one would take their place.
+      if (!loaded) {
+        return "";
+      }
       const current = latest.current;
       const now = Date.now();
       const list = withGames(
@@ -159,11 +171,11 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       );
       const next = [list, ...current];
       change(next);
-      saveList(list);
-      saveListOrder(next);
+      saveInBackground(saveList(list));
+      saveInBackground(saveListOrder(next));
       return list.id;
     },
-    [change]
+    [change, loaded]
   );
 
   const updateList = useCallback(
@@ -178,7 +190,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       change(current.map((one) => (one.id === id ? updated : one)));
-      saveList(updated);
+      saveInBackground(saveList(updated));
     },
     [change]
   );
@@ -230,8 +242,8 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       recordDeletions(deletedLists([list], Date.now()));
       const next = current.filter((one) => one.id !== id);
       change(next);
-      removeList(id);
-      saveListOrder(next);
+      saveInBackground(removeList(id));
+      saveInBackground(saveListOrder(next));
     },
     [change]
   );
@@ -259,10 +271,10 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       change(next);
       for (const list of next) {
         if (!unchanged.has(list)) {
-          saveList(list);
+          saveInBackground(saveList(list));
         }
       }
-      saveListOrder(next);
+      saveInBackground(saveListOrder(next));
     },
     [change]
   );
@@ -293,20 +305,25 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       }
       commit(next);
       for (const list of changed) {
-        saveList(list);
+        saveInBackground(saveList(list));
       }
     },
     [commit]
   );
 
   const clearAll = useCallback(() => {
+    if (!loaded) {
+      return;
+    }
     const current = latest.current;
     recordDeletions(deletedLists(current, Date.now()));
     change([]);
-    removeAllLists(current);
-  }, [change]);
+    saveInBackground(removeAllLists(current));
+  }, [change, loaded]);
 
-  // A restore turns sync off first: it records no deletion.
+  // A restore turns sync off first: it records no deletion. It goes through
+  // even over lists that could not be read, and its failure is the caller's
+  // to tell.
   const replaceAll = useCallback(
     async (restored: GameList[]) => {
       const current = latest.current;
@@ -314,6 +331,8 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
       commit(next);
       await removeAllLists(current);
       await saveAllLists(next);
+      setUnreadable(false);
+      setLoaded(true);
     },
     [commit]
   );
@@ -334,6 +353,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       lists,
       loaded,
+      unreadable,
       getList,
       getLists,
       createList,
@@ -355,6 +375,7 @@ export const ListsProvider = ({ children }: { children: ReactNode }) => {
     [
       lists,
       loaded,
+      unreadable,
       getList,
       getLists,
       createList,

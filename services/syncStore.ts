@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { isRecord } from "@/core/backup";
 import type { SyncChanges } from "@/core/sync";
 import { addTombstones, type SyncState } from "@/core/syncClient";
+import { reportSaveFailure } from "@/services/saveFailures";
 
 // The sync state lives here, outside React: the library and the lists record
 // their deletions in it, and the sync reads and writes it. While sync is off
@@ -28,14 +29,14 @@ const isState = (value: unknown): value is SyncState =>
 
 function save(): Promise<void> {
   const snapshot = state;
-  // Writes go in order; a failed one is made good by the next.
+  // Writes go in order; a failed one is reported, and made good by the next.
   writing = writing
     .then(() =>
       snapshot
         ? AsyncStorage.setItem(KEY, JSON.stringify(snapshot))
         : AsyncStorage.removeItem(KEY)
     )
-    .catch(() => undefined);
+    .catch(reportSaveFailure);
   return writing;
 }
 
