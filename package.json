@@ -9,6 +9,7 @@
     "generate-readme-image": "bun scripts/generate-readme-image.js",
     "check": "ultracite check",
     "fix": "ultracite fix",
+    "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:import": "bun scripts/test-import.ts"
   },

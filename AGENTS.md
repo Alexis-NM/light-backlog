@@ -14,6 +14,7 @@ Expo template with pre-built components and patterns.
 - `bun run generate-readme-image` - Generate README example image (requires A.png, B.png, C.png, D.png in assets/images/)
 - `bun run check` - Lint
 - `bun run fix` - Automatically fix linting issues
+- `bun run typecheck` - Type-check (`tsc --noEmit`)
 - `bun test` - Unit tests (`*.test.ts`, run with `bun:test`)
 - `bun run test:import` - Live check of the list-import matcher against IGDB (needs `IGDB_CLIENT_ID` / `IGDB_CLIENT_SECRET`)
 
@@ -43,10 +44,13 @@ Delete `/android` folder before first build (regenerates with your config).
 ## GitHub Actions
 Workflow at `.github/workflows/build.yml` builds APK and creates release:
 1. Triggered manually via `workflow_dispatch`
-2. Generates the Android project with `expo prebuild`, then builds the release APK with Gradle
-3. Creates GitHub release with changelog
+2. Lints, type-checks and runs the tests: a failure stops the release
+3. Generates the Android project with `expo prebuild`, then builds the release APK with Gradle
+4. Creates GitHub release with changelog, in a second job: the only one allowed to write to the repository
 
 No Expo account or repo secret is needed.
+
+Actions are pinned to a commit SHA, with the version in a comment. To update one, replace both; never go back to a tag such as `@v5`.
 
 ## Styling with `n()`
 **Always use `n()` for sizes** - normalises across screen densities:

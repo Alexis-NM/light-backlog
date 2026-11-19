@@ -161,7 +161,8 @@ JAVA_HOME=<path-to-jdk-17> ./gradlew assembleRelease
 bun dev                # Build and run
 bun run check          # Lint (ultracite / biome)
 bun run fix            # Auto-fix lint issues
-bun test               # Unit tests (list parser, import matcher)
+bun run typecheck      # Type-check (tsc)
+bun test               # Unit tests (core/ and storage)
 bun run test:import    # Live IGDB run of the import matcher (see below)
 bun run sync-version   # Sync version across files
 bun run generate-icon  # Generate icon from app name
@@ -185,10 +186,10 @@ the scoring in `core/importMatcher.ts`.
 
 ## Releases (CI)
 
-`.github/workflows/build.yml` generates the Android project with
-`expo prebuild`, builds the release APK with Gradle and creates a GitHub
-release on manual dispatch (Actions tab). No Expo account or secret is
-needed. Alternatively, attach a locally-built `app-release.apk` to a release
+`.github/workflows/build.yml` lints, type-checks and tests the code,
+generates the Android project with `expo prebuild`, builds the release APK
+with Gradle and creates a GitHub release on manual dispatch (Actions tab). No
+Expo account or secret is needed. Alternatively, attach a locally-built `app-release.apk` to a release
 by hand.
 
 ## Tech stack
