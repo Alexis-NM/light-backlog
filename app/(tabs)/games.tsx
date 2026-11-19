@@ -29,7 +29,7 @@ export default function GamesScreen() {
   const { invertColors } = useInvertColors();
   const { gamesFullscreen, setGamesFullscreen } = useFullscreen();
   const { selectedConsole, setSelectedConsole } = useBrowse();
-  const { getEntry, addPlatform, removeEntry } = useLibrary();
+  const { getEntry, getEntries, addPlatform, removeEntry } = useLibrary();
   const { games, phase, loadingMore, errorText, loadMore } = usePlatformGames(
     selectedConsole?.id ?? null
   );
@@ -43,9 +43,11 @@ export default function GamesScreen() {
     [getEntry]
   );
 
+  // From the latest entries, not the rendered ones: this function then stays
+  // the same when the library changes, and so do the cards it is given to.
   const quickToggle = useCallback(
     (game: Game) => {
-      if (getEntry(game.id)) {
+      if (getEntries()[game.id]) {
         removeEntry(game.id);
         triggerHaptic();
         return;
@@ -57,7 +59,7 @@ export default function GamesScreen() {
         triggerSuccess();
       }
     },
-    [addPlatform, consoleId, consoleName, getEntry, removeEntry]
+    [addPlatform, consoleId, consoleName, getEntries, removeEntry]
   );
 
   if (!access) {

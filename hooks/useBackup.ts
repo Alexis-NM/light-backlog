@@ -21,8 +21,8 @@ const apply = <T>(value: T | undefined, set: (value: T) => Promise<void>) =>
 /** Gathers every persisted store into a backup, and applies one back. */
 export function useBackup() {
   const { auth, setCredentials } = useCredentials();
-  const { entries, replaceAll: replaceLibrary } = useLibrary();
-  const { lists, replaceAll: replaceLists } = useLists();
+  const { getEntries, replaceAll: replaceLibrary } = useLibrary();
+  const { getLists, replaceAll: replaceLists } = useLists();
   const { invertColors, setInvertColors } = useInvertColors();
   const { language, setLanguage } = useLanguage();
   const { librarySort, listSort, setLibrarySort, setListSort } = useSort();
@@ -36,13 +36,15 @@ export function useBackup() {
   } = useFullscreen();
   const { selectedConsole, setSelectedConsole } = useBrowse();
 
+  // The library and the lists as they are when the backup is asked for: this
+  // function does not change with them.
   const buildBackup = useCallback(
     (includeCredentials: boolean): Backup => ({
       app: BACKUP_APP,
       version: BACKUP_VERSION,
       exportedAt: new Date().toISOString(),
-      lists,
-      library: entries,
+      lists: getLists(),
+      library: getEntries(),
       settings: {
         gamesFullscreen,
         invertColors,
@@ -57,15 +59,15 @@ export function useBackup() {
     }),
     [
       auth,
-      entries,
       gamesFullscreen,
+      getEntries,
+      getLists,
       invertColors,
       language,
       libraryFullscreen,
       librarySort,
       listFullscreen,
       listSort,
-      lists,
       selectedConsole,
     ]
   );

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { useMemo } from "react";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { BrowseProvider } from "@/contexts/BrowseContext";
@@ -16,21 +17,29 @@ import { SortProvider } from "@/contexts/SortContext";
 import { SyncProvider } from "@/contexts/SyncContext";
 import { useIgdbRatingsBackfill } from "@/hooks/useIgdbRatings";
 
+/**
+ * Fills in the IGDB ratings that are missing. On its own, so that a change to
+ * the library or to the lists does not render the navigator again.
+ */
+function RatingsBackfill() {
+  useIgdbRatingsBackfill();
+  return null;
+}
+
 function RootLayout() {
   const { invertColors } = useInvertColors();
-  useIgdbRatingsBackfill();
-
-  return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: "none",
-        contentStyle: {
-          backgroundColor: invertColors ? "white" : "black",
-        },
-      }}
-    />
+  const screenOptions = useMemo(
+    () => ({
+      headerShown: false,
+      animation: "none" as const,
+      contentStyle: {
+        backgroundColor: invertColors ? "white" : "black",
+      },
+    }),
+    [invertColors]
   );
+
+  return <Stack screenOptions={screenOptions} />;
 }
 
 export default function App() {
@@ -47,6 +56,7 @@ export default function App() {
                       <SyncProvider>
                         <ConfirmProvider>
                           <StatusBar hidden />
+                          <RatingsBackfill />
                           <RootLayout />
                         </ConfirmProvider>
                       </SyncProvider>
