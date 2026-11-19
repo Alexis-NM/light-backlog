@@ -1,5 +1,5 @@
 import { type Href, router } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import ContentContainer from "@/components/ContentContainer";
 import { EmptyState } from "@/components/EmptyState";
@@ -21,6 +21,7 @@ import {
 } from "@/core/game";
 import type { TranslationKey } from "@/core/translations";
 import { usePersistedState } from "@/hooks/usePersistedState";
+import { useSelection } from "@/hooks/useSelection";
 import { useSyncOnFocus } from "@/hooks/useSyncOnFocus";
 import { n } from "@/utils/scaling";
 
@@ -73,8 +74,13 @@ export default function LibraryScreen() {
     "library_filters",
     DEFAULT_FILTERS
   );
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const {
+    selectedIds,
+    selecting: selectionMode,
+    start: enterSelection,
+    stop: exitSelection,
+    toggle: toggleSelect,
+  } = useSelection();
 
   const sorted = useMemo(() => {
     const list = Object.values(entries);
@@ -137,33 +143,6 @@ export default function LibraryScreen() {
     },
     [entries, filters.status, t]
   );
-
-  const toggleSelect = useCallback(
-    (game: Game) =>
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(game.id)) {
-          next.delete(game.id);
-        } else {
-          next.add(game.id);
-        }
-        return next;
-      }),
-    []
-  );
-
-  const enterSelection = useCallback(
-    (game: Game) => {
-      setSelectionMode(true);
-      toggleSelect(game);
-    },
-    [toggleSelect]
-  );
-
-  const exitSelection = () => {
-    setSelectionMode(false);
-    setSelectedIds(new Set());
-  };
 
   const applyStatus = (status: GameStatus) => {
     setStatusMany([...selectedIds], status);

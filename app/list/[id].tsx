@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { ChipSelect } from "@/components/ChipSelect";
 import { ConsoleSelect } from "@/components/ConsoleSelect";
@@ -15,14 +15,10 @@ import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
 import { useSort } from "@/contexts/SortContext";
 import { compareIgdbRating, compareNames } from "@/core/compareNames";
-import {
-  type Game,
-  type GameList,
-  LIST_SORTS,
-  type SortMode,
-} from "@/core/game";
+import { type GameList, LIST_SORTS, type SortMode } from "@/core/game";
 import { listGames } from "@/core/lists";
 import type { TranslationKey } from "@/core/translations";
+import { useSelection } from "@/hooks/useSelection";
 import { useSyncOnFocus } from "@/hooks/useSyncOnFocus";
 import { triggerSuccess } from "@/utils/haptics";
 import { n } from "@/utils/scaling";
@@ -57,8 +53,14 @@ export default function ListDetailScreen() {
   const { listFullscreen, setListFullscreen } = useFullscreen();
   const { listSort } = useSort();
   const params = useLocalSearchParams<{ id: string }>();
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const {
+    selectAll,
+    selectedIds,
+    selecting: selectionMode,
+    start: enterSelection,
+    stop: exitSelection,
+    toggle: toggleSelect,
+  } = useSelection();
 
   const list = getList(params.id);
   const sort = list?.sort ?? listSort;
@@ -77,28 +79,6 @@ export default function ListDetailScreen() {
     [t]
   );
 
-  const toggleSelect = useCallback(
-    (game: Game) =>
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(game.id)) {
-          next.delete(game.id);
-        } else {
-          next.add(game.id);
-        }
-        return next;
-      }),
-    []
-  );
-
-  const enterSelection = useCallback(
-    (game: Game) => {
-      setSelectionMode(true);
-      toggleSelect(game);
-    },
-    [toggleSelect]
-  );
-
   if (!list) {
     return <ContentContainer headerTitle=" " />;
   }
@@ -112,13 +92,6 @@ export default function ListDetailScreen() {
         ? consoles.filter((c) => c !== name)
         : [...consoles, name]
     );
-
-  const exitSelection = () => {
-    setSelectionMode(false);
-    setSelectedIds(new Set());
-  };
-
-  const selectAll = () => setSelectedIds(new Set(games.map((game) => game.id)));
 
   const addSelectedToLibrary = () => {
     const selected = games.filter((game) => selectedIds.has(game.id));
@@ -197,7 +170,7 @@ export default function ListDetailScreen() {
       rightActions={
         selectionMode
           ? [
-              { icon: "select-all", onPress: selectAll },
+              { icon: "select-all", onPress: () => selectAll(games) },
               { icon: "close", onPress: exitSelection },
             ]
           : [
