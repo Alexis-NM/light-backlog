@@ -19,7 +19,12 @@ import {
   type SortMode,
 } from "./game";
 
-/** Compatible additions keep it. Anything else bumps it, and the server answers 409. */
+/**
+ * Compatible additions keep it. Anything else bumps it, and the server
+ * answers 409. A new field is compatible: unknown fields go through. A new
+ * value of a field checked against a list (a status, a sort) is not: an app
+ * that does not know it refuses the whole answer, and stops syncing.
+ */
 export const SYNC_VERSION = 1;
 
 /** What the most-recent-change rule compares. */
