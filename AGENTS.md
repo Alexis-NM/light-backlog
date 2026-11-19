@@ -46,9 +46,9 @@ Workflow at `.github/workflows/build.yml` builds APK and creates release:
 1. Triggered manually via `workflow_dispatch`
 2. Lints, type-checks and runs the tests: a failure stops the release
 3. Generates the Android project with `expo prebuild`, then builds the release APK with Gradle
-4. Creates GitHub release with changelog, in a second job: the only one allowed to write to the repository
+4. Signs the APK with the project's key, then creates GitHub release with changelog, in a second job: the only one allowed to write to the repository and to read the signing key
 
-No Expo account or repo secret is needed.
+No Expo account is needed. The signing key is in two repo secrets, `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD` (see Releases in `README.md`); never give them to the build job, which runs the dependencies' code.
 
 Actions are pinned to a commit SHA, with the version in a comment. To update one, replace both; never go back to a tag such as `@v5`.
 

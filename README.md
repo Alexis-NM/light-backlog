@@ -119,16 +119,24 @@ server and comes with no promise of stability for others.
 
 ## Install (APK)
 
-Grab the latest `app-release.apk` from the
+Grab the latest `backlog_<version>.apk` from the
 [Releases](https://github.com/Alexis-NM/light-backlog/releases) page and install
 it over USB:
 
 ```bash
-adb install -r app-release.apk
+adb install -r backlog_<version>.apk
 ```
 
-The release APK is signed with the Android **debug** key — fine for personal
-sideloading, not for the Play Store.
+Releases after 1.9.0 are signed with this project's own key. Versions up to
+1.9.0 were signed with the Android **debug** key, which anyone has, and
+Android refuses to update an app signed with one key by an APK signed with
+another. To move on from 1.9.0 or older:
+
+1. **Settings → Backup → Export a backup** (include the IGDB credentials if
+   you have some).
+2. Uninstall Backlog, then install the new APK.
+3. **Settings → Backup → Restore a backup**, then set sync up again if you
+   use it.
 
 ## Development
 
@@ -141,7 +149,8 @@ bun dev          # build the debug app and run it on a device/emulator
 ```
 
 The `android/` and `ios/` folders are **not** committed — they are generated
-from `app.json` and the config plugins by `expo prebuild` (or by EAS in CI).
+from `app.json` and the config plugins by `expo prebuild`, as the release
+workflow does.
 
 The logic that does not depend on React Native or Expo (data types, IGDB
 client, list import, backup format, translations, consoles) lives in `core/`:
@@ -156,6 +165,9 @@ cd android
 JAVA_HOME=<path-to-jdk-17> ./gradlew assembleRelease
 # → android/app/build/outputs/apk/release/app-release.apk
 ```
+
+A local build is signed with the debug key: it installs over another local
+build, not over a released APK.
 
 ### Commands
 
@@ -189,10 +201,25 @@ the scoring in `core/importMatcher.ts`.
 ## Releases (CI)
 
 `.github/workflows/build.yml` lints, type-checks and tests the code,
-generates the Android project with `expo prebuild`, builds the release APK
-with Gradle and creates a GitHub release on manual dispatch (Actions tab). No
-Expo account or secret is needed. Alternatively, attach a locally-built `app-release.apk` to a release
-by hand.
+generates the Android project with `expo prebuild` and builds the release APK
+with Gradle, on manual dispatch (Actions tab). A second job, which runs none
+of the repository's code, signs the APK with the project's key and creates
+the GitHub release. No Expo account is needed.
+
+The signing key lives in two repository secrets, which only that second job
+reads: `ANDROID_KEYSTORE_BASE64` (the keystore, in base64) and
+`ANDROID_KEYSTORE_PASSWORD`. Without them the workflow stops before the
+build. To create them, once:
+
+```bash
+keytool -genkeypair -storetype PKCS12 -keystore backlog-release.keystore \
+  -alias backlog -keyalg RSA -keysize 4096 -validity 10000
+base64 -i backlog-release.keystore | gh secret set ANDROID_KEYSTORE_BASE64
+gh secret set ANDROID_KEYSTORE_PASSWORD
+```
+
+Keep the keystore and its password somewhere safe, outside the repository:
+without them, no later version can update the app people have installed.
 
 ## Tech stack
 

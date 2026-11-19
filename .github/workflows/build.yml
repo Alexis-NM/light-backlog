@@ -3,8 +3,8 @@ name: Android App APK Build
 on:
   workflow_dispatch:
 
-# Only the release job may write. Actions are pinned to a commit: a tag can
-# be moved to other code, a commit cannot.
+# Only the release job may write, and only it sees the signing key. Actions
+# are pinned to a commit: a tag can be moved to other code, a commit cannot.
 permissions:
   contents: read
 
@@ -16,6 +16,17 @@ jobs:
       version: ${{ steps.app.outputs.version }}
       changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
+      # Fails at once rather than after the build. This job learns whether
+      # the secrets are set, never what they hold.
+      - name: Check the signing secrets
+        env:
+          HAS_SIGNING_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' }}
+        run: |
+          if [ "$HAS_SIGNING_KEY" != "true" ]; then
+            echo "::error::Set the ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD secrets: see Releases (CI) in README.md."
+            exit 1
+          fi
+
       - name: Setup repo
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -66,10 +77,10 @@ jobs:
           ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/$APK"
 
-      - name: Upload APK artifact
+      - name: Upload the APK to sign
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: app-release
+          name: apk-to-sign
           path: ${{ steps.app.outputs.apk }}
           if-no-files-found: error
 
@@ -88,18 +99,43 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-  # Runs none of the repository's code, nor its dependencies': it only
-  # publishes the APK built above.
+  # Runs none of the repository's code, nor its dependencies': it only signs
+  # and publishes the APK built above.
   release:
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download APK artifact
+      - name: Download the APK to sign
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: app-release
+          name: apk-to-sign
+
+      # Gradle signed the APK with the debug key of the Expo template, which
+      # anyone has. Signing again replaces that signature with the project's.
+      - name: Sign the APK
+        env:
+          APK: ${{ needs.build.outputs.apk }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          KEYSTORE="$RUNNER_TEMP/release.keystore"
+          trap 'rm -f "$KEYSTORE"' EXIT
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          "$APKSIGNER" sign --ks "$KEYSTORE" --ks-pass env:KEYSTORE_PASSWORD "$APK"
+          "$APKSIGNER" verify --print-certs "$APK" | tee signers.txt
+          if grep -q "CN=Android Debug" signers.txt; then
+            echo "::error::The APK is still signed with the debug key."
+            exit 1
+          fi
+          {
+            echo "### Signed by"
+            echo '```'
+            cat signers.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
