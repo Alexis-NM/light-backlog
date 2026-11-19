@@ -74,7 +74,10 @@ Credentials are stored on-device with `expo-secure-store`. They leave it only
 for Twitch, to sign in to IGDB, and for a backup when you choose to include
 them. Your library and lists are stored locally (`AsyncStorage`) and work
 offline.
-They stay on the device unless you set up a sync server.
+They stay on the device unless you set up a sync server: the app is left out
+of Android's cloud backup. To move to another phone, export a backup and
+restore it there (on Android 12 and later, a direct phone-to-phone transfer
+may also copy the app's data, which is the phone maker's choice).
 
 Without credentials, the app goes through your sync server if one is set
 (see [Sync](#sync)): the server queries IGDB with its own keys. Credentials
