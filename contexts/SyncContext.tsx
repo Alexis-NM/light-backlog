@@ -8,6 +8,7 @@ import {
   useEffect,
   useEffectEvent,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { AppState } from "react-native";
@@ -124,6 +125,13 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
   } = useLists();
   const { buildBackup, restoreBackup } = useBackup();
   const [server, setServer] = useState<Server | null>(null);
+  // The server syncs are for, known at once. A sync started for another one,
+  // or before a disconnection, finds sync off: it stops and commits nothing.
+  const current = useRef<Server | null>(null);
+  const switchTo = useCallback((next: Server | null) => {
+    current.current = next;
+    setServer(next);
+  }, []);
   const [serverLoaded, setServerLoaded] = useState(false);
   const [status, setStatus] = useState<SyncStatus>(OFF);
   const [hasCopy, setHasCopy] = useState(() => copyFile().exists);
@@ -155,7 +163,7 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
           if (!getSyncState()) {
             setSyncState(newSyncState());
           }
-          setServer({ endpoint, token });
+          switchTo({ endpoint, token });
           setStatus(settledStatus({ phase: "idle", skipped: 0 }));
         } else if (getSyncState()) {
           setSyncState(null);
@@ -165,7 +173,7 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
         // Keychain unavailable: sync stays off.
       })
       .finally(() => setServerLoaded(true));
-  }, []);
+  }, [switchTo]);
 
   /** One sync, whose outcome goes into the status. The runner starts it. */
   const syncWith = useCallback(
@@ -175,10 +183,17 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
         phase: "syncing",
         problem: undefined,
       }));
+      const isCurrent = () => current.current === target;
+      /** The outcome of a sync for another server says nothing of this one. */
+      const settled = (outcome: Omit<SyncStatus, "lastSyncedAt">) => {
+        if (isCurrent()) {
+          setStatus(settledStatus(outcome));
+        }
+      };
       try {
         const { skipped } = await syncOnce({
           getLocal: () => ({ library: getEntries(), lists: getLists() }),
-          getState: getSyncState,
+          getState: () => (isCurrent() ? getSyncState() : null),
           commit: (local, state) => {
             commitLibrary(local.library);
             commitLists(local.lists);
@@ -186,11 +201,11 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
           },
           post: createTransport(target.endpoint, target.token),
         });
-        setStatus(settledStatus({ phase: "idle", skipped }));
+        settled({ phase: "idle", skipped });
         return "done";
       } catch (error) {
         const problem = problemOf(error);
-        setStatus(settledStatus({ phase: "error", problem, skipped: 0 }));
+        settled({ phase: "error", problem, skipped: 0 });
         return isTransient(problem) ? "retry" : "done";
       }
     },
@@ -283,10 +298,10 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
       await setItemAsync(ENDPOINT_KEY, target.endpoint);
       await setItemAsync(TOKEN_KEY, target.token);
       await setSyncState(newSyncState());
-      setServer(target);
+      switchTo(target);
       await runner.now(() => syncWith(target));
     },
-    [buildBackup, getEntries, getLists, runner, syncWith]
+    [buildBackup, getEntries, getLists, runner, switchTo, syncWith]
   );
 
   const disconnect = useCallback(async () => {
@@ -296,9 +311,9 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
       deleteItemAsync(ENDPOINT_KEY),
       deleteItemAsync(TOKEN_KEY),
     ]);
-    setServer(null);
+    switchTo(null);
     setStatus(OFF);
-  }, [runner]);
+  }, [runner, switchTo]);
 
   const restoreCopy = useCallback(async () => {
     const backup = parseBackup(await copyFile().text());

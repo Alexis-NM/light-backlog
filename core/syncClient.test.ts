@@ -745,6 +745,28 @@ describe("syncOnce", () => {
     expect(result.received).toBe(0);
   });
 
+  test("sends nothing more once sync is turned off during the exchange", async () => {
+    const server = fakeServer();
+    const phone = device(sample());
+    await syncOnce(
+      {
+        getLocal: () => phone.local,
+        getState: () => phone.state,
+        commit: () => {
+          throw new Error("Nothing to commit.");
+        },
+        post: (request) => {
+          phone.state = null;
+          return server.post(request);
+        },
+      },
+      2
+    );
+    // Six elements, two per request: the first request is the last one.
+    expect(server.requests).toHaveLength(1);
+    expect(server.tables.entries.size).toBe(0);
+  });
+
   test("offline, the changes wait for the next sync", async () => {
     const server = fakeServer();
     const phone = device(sample());

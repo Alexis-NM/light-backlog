@@ -349,19 +349,26 @@ const mergeChanges = (pages: SyncChanges[]): SyncChanges => ({
 
 /**
  * Sends the batches one after the other, then asks again while the server has
- * more to send. Each request carries the cursor of the previous answer.
+ * more to send. Each request carries the cursor of the previous answer. It
+ * stops between two requests once `stillOn` says sync was turned off: nothing
+ * more goes out.
  */
 export async function exchange(
   pending: SyncChanges,
   cursor: number,
   post: SyncTransport,
-  batchSize = BATCH_SIZE
+  batchSize = BATCH_SIZE,
+  stillOn: () => boolean = () => true
 ): Promise<{ cursor: number; received: SyncChanges }> {
   const batches = toBatches(pending, batchSize);
   const pages: SyncChanges[] = [];
   let position = cursor;
   let more = true;
-  for (let index = 0; index < batches.length || more; index += 1) {
+  for (
+    let index = 0;
+    (index < batches.length || more) && stillOn();
+    index += 1
+  ) {
     const response = await post({
       version: SYNC_VERSION,
       cursor: position,
@@ -706,10 +713,17 @@ export async function syncOnce(
     return { received: 0, sent: 0, skipped: 0 };
   }
   const { changes: sent, skipped } = pendingChanges(session.getLocal(), before);
-  const since = await exchange(sent, before.cursor, session.post, batchSize);
+  const stillOn = () => session.getState() !== null;
+  const since = await exchange(
+    sent,
+    before.cursor,
+    session.post,
+    batchSize,
+    stillOn
+  );
   const deletedHere = session.getState()?.tombstones ?? noChanges();
   const { cursor, received } = bringsBackList(deletedHere, since.received)
-    ? await exchange(noChanges(), 0, session.post, batchSize)
+    ? await exchange(noChanges(), 0, session.post, batchSize, stillOn)
     : since;
   const state = session.getState();
   if (!state) {
