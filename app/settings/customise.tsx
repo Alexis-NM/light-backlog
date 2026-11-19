@@ -4,7 +4,7 @@ import { SelectorButton } from "@/components/SelectorButton";
 import { StyledButton } from "@/components/StyledButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSort } from "@/contexts/SortContext";
-import type { TranslationKey } from "@/core/translations";
+import { librarySortKey, type TranslationKey } from "@/core/translations";
 
 export default function CustomiseScreen() {
   const { t, language } = useLanguage();
@@ -24,7 +24,7 @@ export default function CustomiseScreen() {
       <SelectorButton
         href="/settings/sort-library"
         label={t("settings_sort_library")}
-        value={t(`sort_${librarySort}` as TranslationKey)}
+        value={t(librarySortKey(librarySort))}
       />
       <SelectorButton
         href="/settings/sort-lists"

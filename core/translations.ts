@@ -1,3 +1,5 @@
+import type { SortMode } from "./game";
+
 const en = {
   // Tabs
 
@@ -186,6 +188,7 @@ const en = {
   sort_alpha: "A-Z",
   sort_alpha_desc: "Z-A",
   sort_recent: "Recently added",
+  sort_recent_library: "Recently changed",
   sort_rating: "My rating",
   sort_igdb: "IGDB rating",
 
@@ -417,6 +420,7 @@ const fr: Record<TranslationKey, string> = {
   sort_alpha: "A-Z",
   sort_alpha_desc: "Z-A",
   sort_recent: "Récemment ajouté",
+  sort_recent_library: "Récemment modifié",
   sort_rating: "Ma note",
   sort_igdb: "Note IGDB",
 
@@ -455,5 +459,13 @@ const fr: Record<TranslationKey, string> = {
 };
 
 export const translations = { en, fr } as const;
+
+/**
+ * The name of a sort of the library. "recent" is not the same there as in a
+ * list: the library goes by the latest change, a list by the latest game
+ * added.
+ */
+export const librarySortKey = (mode: SortMode): TranslationKey =>
+  mode === "recent" ? "sort_recent_library" : `sort_${mode}`;
 
 export type Language = keyof typeof translations;

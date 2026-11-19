@@ -3,7 +3,7 @@ import { OptionsSelector } from "@/components/OptionsSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSort } from "@/contexts/SortContext";
 import { LIBRARY_SORTS, type SortMode } from "@/core/game";
-import type { TranslationKey } from "@/core/translations";
+import { librarySortKey } from "@/core/translations";
 
 export default function SortLibraryScreen() {
   const { t } = useLanguage();
@@ -16,7 +16,7 @@ export default function SortLibraryScreen() {
         router.back();
       }}
       options={LIBRARY_SORTS.map((mode) => ({
-        label: t(`sort_${mode}` as TranslationKey),
+        label: t(librarySortKey(mode)),
         value: mode,
       }))}
       selectedValue={librarySort}
