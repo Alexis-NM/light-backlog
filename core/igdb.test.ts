@@ -141,6 +141,19 @@ describe("directly with keys", () => {
     });
   });
 
+  test("sends the keys to Twitch in the body, never in the address", async () => {
+    answer(twitch, json([zelda]));
+    await searchGames("zelda", { clientId: "id &1", clientSecret: "s=cret" });
+    expect(calls[0].url).toBe("https://id.twitch.tv/oauth2/token");
+    expect(calls[0].init.method).toBe("POST");
+    expect(headersOf(calls[0])["Content-Type"]).toBe(
+      "application/x-www-form-urlencoded"
+    );
+    expect(calls[0].init.body).toBe(
+      "client_id=id%20%261&client_secret=s%3Dcret&grant_type=client_credentials"
+    );
+  });
+
   test("renews the Twitch token once when IGDB refuses it", async () => {
     answer(twitch, json({}, 401), twitch, json([zelda]));
     const games = await searchGames("zelda", keys);

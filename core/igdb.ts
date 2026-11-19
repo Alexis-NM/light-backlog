@@ -150,7 +150,8 @@ async function getToken(auth: IgdbAuth): Promise<string> {
     return tokenCache.token;
   }
 
-  const url = `${TOKEN_URL}?client_id=${encodeURIComponent(
+  // In the body, not in the address: addresses end up in logs.
+  const body = `client_id=${encodeURIComponent(
     auth.clientId
   )}&client_secret=${encodeURIComponent(
     auth.clientSecret
@@ -158,7 +159,11 @@ async function getToken(auth: IgdbAuth): Promise<string> {
 
   let response: Response;
   try {
-    response = await fetchInTime(url, { method: "POST" });
+    response = await fetchInTime(TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
   } catch {
     throw new IgdbError("network", "Failed to reach Twitch.");
   }
