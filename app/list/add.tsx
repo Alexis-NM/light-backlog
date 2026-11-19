@@ -9,19 +9,8 @@ import { TextInput } from "@/components/TextInput";
 import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLists } from "@/contexts/ListsContext";
-import type { Game } from "@/core/game";
+import { readGame, readGames } from "@/utils/routeParams";
 import { n } from "@/utils/scaling";
-
-function parseGames(raw?: string): Game[] {
-  if (!raw) {
-    return [];
-  }
-  try {
-    return JSON.parse(raw) as Game[];
-  } catch {
-    return [];
-  }
-}
 
 export default function AddToListScreen() {
   const { t } = useLanguage();
@@ -42,18 +31,8 @@ export default function AddToListScreen() {
 
   const iconColor = invertColors ? "black" : "white";
 
-  const game = useMemo<Game | null>(() => {
-    if (!params.game) {
-      return null;
-    }
-    try {
-      return JSON.parse(params.game) as Game;
-    } catch {
-      return null;
-    }
-  }, [params.game]);
-
-  const games = useMemo(() => parseGames(params.games), [params.games]);
+  const game = useMemo(() => readGame(params.game), [params.game]);
+  const games = useMemo(() => readGames(params.games), [params.games]);
   const multi = games.length > 0;
 
   if (!(game || multi)) {

@@ -140,6 +140,9 @@ export function coverUrl(imageId: string, size = "t_cover_big") {
   return `${IMAGE_BASE}/${size}/${imageId}.jpg`;
 }
 
+/** Whether an address is an IGDB image, such as a cover or a screenshot. */
+export const isIgdbImage = (url: string) => url.startsWith(`${IMAGE_BASE}/`);
+
 async function getToken(auth: IgdbAuth): Promise<string> {
   const now = Date.now();
   if (

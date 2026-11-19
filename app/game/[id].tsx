@@ -12,12 +12,13 @@ import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { EXTRA_CONSOLES } from "@/core/consoles";
-import { entryPlatforms, GAME_STATUSES, type Game } from "@/core/game";
+import { entryPlatforms, GAME_STATUSES } from "@/core/game";
 import { type GameDetails, getGameDetails } from "@/core/igdb";
 import { translateText } from "@/core/translate";
 import type { TranslationKey } from "@/core/translations";
 import { useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { openImageViewer } from "@/utils/navigation";
+import { readGame } from "@/utils/routeParams";
 import { n } from "@/utils/scaling";
 
 const MAX_SCREENSHOTS = 8;
@@ -31,16 +32,7 @@ export default function GameDetailScreen() {
     useLibrary();
   const params = useLocalSearchParams<{ id: string; game?: string }>();
 
-  const parsedGame = useMemo<Game | null>(() => {
-    if (!params.game) {
-      return null;
-    }
-    try {
-      return JSON.parse(params.game) as Game;
-    } catch {
-      return null;
-    }
-  }, [params.game]);
+  const parsedGame = useMemo(() => readGame(params.game), [params.game]);
 
   // Each answer is kept with what it answers, so a stale one never shows.
   const [loaded, setLoaded] = useState<{

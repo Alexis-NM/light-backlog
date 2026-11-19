@@ -14,6 +14,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { readImages } from "@/utils/routeParams";
 import { n } from "@/utils/scaling";
 
 function clamp(value: number, max: number) {
@@ -30,16 +31,7 @@ export default function ImageViewerScreen() {
   const params = useLocalSearchParams<{ images?: string; index?: string }>();
   const { width, height } = useWindowDimensions();
 
-  const images = useMemo<string[]>(() => {
-    if (!params.images) {
-      return [];
-    }
-    try {
-      return JSON.parse(params.images) as string[];
-    } catch {
-      return [];
-    }
-  }, [params.images]);
+  const images = useMemo(() => readImages(params.images), [params.images]);
 
   const initialIndex = clamp(Number(params.index) || 0, images.length - 1);
   const [index, setIndex] = useState(initialIndex);

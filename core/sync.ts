@@ -171,7 +171,7 @@ const hasRatingsTogether = (game: Record<string, unknown>) => {
   );
 };
 
-const isGame = (value: unknown): value is Game =>
+export const isGame = (value: unknown): value is Game =>
   isRecord(value) &&
   isInt32(value.id) &&
   value.id > 0 &&
