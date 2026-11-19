@@ -8,6 +8,10 @@
 // is then scored on name similarity, game type (main game vs DLC/bundle…),
 // year hint and popularity. Titles with nothing on the chosen consoles are
 // retried without the platform filter and flagged for review.
+//
+// A search that fails is tried once more. If it fails again, the import ends
+// there and keeps what it found: the titles it did not reach are told apart
+// from those IGDB does not know.
 
 import { platformIdFor, platformIdsFor } from "./consoles";
 import type { CandidateQuery, MatchCandidate } from "./igdb";
@@ -28,6 +32,8 @@ export interface ImportMatch {
   onPlatform: boolean;
   /** The title as it was typed. */
   title: string;
+  /** The search failed before reaching this title: it was not looked up. */
+  unsearched?: boolean;
 }
 
 export type SearchBatch = (
@@ -41,6 +47,8 @@ export interface MatchOptions {
   /** Pause between two search requests (IGDB allows 4 per second). */
   delayMs?: number;
   onProgress?: (done: number, total: number) => void;
+  /** Pause before the second try of a search that failed. */
+  retryDelayMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -302,6 +310,7 @@ function confidenceOf(nameScore: number): MatchConfidence {
 // Progress is reported once per batch; the search itself paces its requests.
 const DEFAULT_BATCH_SIZE = 5;
 const DEFAULT_DELAY_MS = 260;
+const DEFAULT_RETRY_DELAY_MS = 2000;
 
 const wait = (ms: number) =>
   ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : undefined;
@@ -311,6 +320,8 @@ interface Entry {
   key: string;
   platformIds: number[];
   result: ImportMatch;
+  /** A search for this title went through, whatever it found. */
+  searched: boolean;
 }
 
 interface PassOptions {
@@ -319,8 +330,23 @@ interface PassOptions {
   filtered: boolean;
   /** A pick made from a shortened title is always reported as uncertain. */
   forceUncertain?: boolean;
+  retryDelayMs: number;
   /** The title sent to IGDB and scored against. */
   termOf: (entry: Entry) => string;
+}
+
+/** A hiccup of the network passes: a search that fails is tried once more. */
+async function searchTwice(
+  search: SearchBatch,
+  queries: CandidateQuery[],
+  retryDelayMs: number
+) {
+  try {
+    return await search(queries);
+  } catch {
+    await wait(retryDelayMs);
+    return search(queries);
+  }
 }
 
 async function runPass(
@@ -334,14 +360,17 @@ async function runPass(
       await wait(options.delayMs);
     }
     const batch = entries.slice(start, start + options.batchSize);
-    const found = await search(
+    const found = await searchTwice(
+      search,
       batch.map((entry) => ({
         key: entry.key,
         text: options.termOf(entry),
         platformIds: options.filtered ? entry.platformIds : undefined,
-      }))
+      })),
+      options.retryDelayMs
     );
     for (const entry of batch) {
+      entry.searched = true;
       const best = pickBestMatch(
         { ...entry.hints, title: options.termOf(entry) },
         found[entry.key] ?? [],
@@ -367,6 +396,10 @@ const shortTitle = (entry: Entry) => baseTitle(entry.hints.title) ?? "";
  * platform-restricted search is done; the retries of the few titles left
  * over (without the platform filter, then with the title cut at its first
  * separator) are not reported separately.
+ *
+ * When the search keeps failing, what was found so far is returned, and the
+ * titles not reached are marked `unsearched`. With nothing found yet, the
+ * failure is thrown, for the caller to tell why.
  */
 export async function matchImportTitles(
   titles: readonly string[],
@@ -376,6 +409,7 @@ export async function matchImportTitles(
   const listPlatforms = platformIdsFor(options.consoles ?? []);
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
   const delayMs = options.delayMs ?? DEFAULT_DELAY_MS;
+  const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
 
   const entries: Entry[] = titles.map((title, index) => {
     const hints = parseTitleHints(title);
@@ -384,13 +418,14 @@ export async function matchImportTitles(
       hints,
       platformIds: hints.platformIds ?? listPlatforms,
       result: { title, onPlatform: true },
+      searched: false,
     };
   });
 
   let done = 0;
   const pass = async (
     candidates: Entry[],
-    passOptions: Omit<PassOptions, "batchSize" | "delayMs">,
+    passOptions: Omit<PassOptions, "batchSize" | "delayMs" | "retryDelayMs">,
     onBatchDone?: (count: number) => void
   ) => {
     const pending = candidates.filter(
@@ -405,28 +440,36 @@ export async function matchImportTitles(
     await runPass(
       pending,
       search,
-      { batchSize, delayMs, ...passOptions },
+      { batchSize, delayMs, retryDelayMs, ...passOptions },
       onBatchDone
     );
   };
   // Dropping the platform filter only makes sense where there was one.
   const restricted = entries.filter((entry) => entry.platformIds.length > 0);
 
-  await pass(entries, { filtered: true, termOf: fullTitle }, (count) => {
-    done += count;
-    options.onProgress?.(done, entries.length);
-  });
-  await pass(restricted, { filtered: false, termOf: fullTitle });
-  await pass(entries, {
-    filtered: true,
-    termOf: shortTitle,
-    forceUncertain: true,
-  });
-  await pass(restricted, {
-    filtered: false,
-    termOf: shortTitle,
-    forceUncertain: true,
-  });
+  try {
+    await pass(entries, { filtered: true, termOf: fullTitle }, (count) => {
+      done += count;
+      options.onProgress?.(done, entries.length);
+    });
+    await pass(restricted, { filtered: false, termOf: fullTitle });
+    await pass(entries, {
+      filtered: true,
+      termOf: shortTitle,
+      forceUncertain: true,
+    });
+    await pass(restricted, {
+      filtered: false,
+      termOf: shortTitle,
+      forceUncertain: true,
+    });
+  } catch (error) {
+    if (!entries.some((entry) => entry.result.game)) {
+      throw error;
+    }
+  }
 
-  return entries.map((entry) => entry.result);
+  return entries.map((entry) =>
+    entry.searched ? entry.result : { ...entry.result, unsearched: true }
+  );
 }

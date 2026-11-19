@@ -85,6 +85,9 @@ const en = {
   import_run: "Import",
   import_matching: "Matching games… {done}/{total}",
   import_done: "Imported {imported} games ({notFound} not found)",
+  import_interrupted:
+    "Import interrupted: {imported} games imported, {remaining} titles not looked up.",
+  import_unsearched: "Not looked up ({count})",
   import_empty: "No games found in the source.",
   import_error: "Could not read the list. Check the link or paste the text.",
   import_not_found: "Not found ({count})",
@@ -309,6 +312,9 @@ const fr: Record<TranslationKey, string> = {
   import_run: "Importer",
   import_matching: "Recherche des jeux… {done}/{total}",
   import_done: "{imported} jeux importés ({notFound} introuvables)",
+  import_interrupted:
+    "Import interrompu : {imported} jeux importés, {remaining} titres non cherchés.",
+  import_unsearched: "Non cherchés ({count})",
   import_empty: "Aucun jeu trouvé dans la source.",
   import_error:
     "Impossible de lire la liste. Vérifie le lien ou colle le texte.",

@@ -331,4 +331,60 @@ describe("matchImportTitles", () => {
     expect(log.map((batch) => batch.length)).toEqual([2, 1]);
     expect(progress).toEqual([2, 3]);
   });
+
+  /** Fails at the given calls (counted from 1), and searches at the others. */
+  const flakySearch = (log: CandidateQuery[][], failing: number[]) => {
+    const search = fakeSearch(log);
+    let call = 0;
+    return (queries: CandidateQuery[]) => {
+      call += 1;
+      return failing.includes(call)
+        ? Promise.reject(new Error("Network request failed"))
+        : search(queries);
+    };
+  };
+
+  const oneByOne = { batchSize: 1, delayMs: 0, retryDelayMs: 0 };
+
+  test("tries a search that failed once more", async () => {
+    const log: CandidateQuery[][] = [];
+    const results = await matchImportTitles(
+      ["God of War", "Halo", "Shadow of the Colossus"],
+      flakySearch(log, [2]),
+      oneByOne
+    );
+    expect(results.map((result) => result.game?.id)).toEqual([1, 3, 4]);
+    expect(results.some((result) => result.unsearched)).toBe(false);
+  });
+
+  test("keeps what it found when the search keeps failing, and tells which titles it did not reach", async () => {
+    const log: CandidateQuery[][] = [];
+    const results = await matchImportTitles(
+      ["God of War", "Nothing Like This", "Halo", "Shadow of the Colossus"],
+      flakySearch(log, [3, 4]),
+      oneByOne
+    );
+    expect(results.map((result) => result.game?.id)).toEqual([
+      1,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    // The second title was looked up and not found; the last two were not.
+    expect(results.map((result) => result.unsearched ?? false)).toEqual([
+      false,
+      false,
+      true,
+      true,
+    ]);
+  });
+
+  test("fails when the search fails before anything was found", async () => {
+    const log: CandidateQuery[][] = [];
+    await expect(
+      matchImportTitles(["God of War", "Halo"], flakySearch(log, [1, 2]), {
+        ...oneByOne,
+      })
+    ).rejects.toThrow("Network request failed");
+  });
 });

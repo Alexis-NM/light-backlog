@@ -150,12 +150,15 @@ export default function ImportListScreen() {
       .filter((game) => game !== undefined)
       .map(toGame);
 
+    const remaining = results.filter((match) => match.unsearched).length;
     setMatches(results);
     setMessage(
-      t("import_done", {
-        imported: matched.length,
-        notFound: titles.length - matched.length,
-      })
+      remaining > 0
+        ? t("import_interrupted", { imported: matched.length, remaining })
+        : t("import_done", {
+            imported: matched.length,
+            notFound: titles.length - matched.length,
+          })
     );
     if (matched.length === 0) {
       setPhase("done");
@@ -174,7 +177,8 @@ export default function ImportListScreen() {
     setPhase("done");
   };
 
-  const notFound = matches.filter((match) => !match.game);
+  const unsearched = matches.filter((match) => match.unsearched);
+  const notFound = matches.filter((match) => !(match.game || match.unsearched));
   const toCheck = matches.filter(
     (match) =>
       match.game && (match.confidence === "uncertain" || !match.onPlatform)
@@ -268,6 +272,12 @@ export default function ImportListScreen() {
           <StyledText style={styles.muted}>{message}</StyledText>
         ) : null}
 
+        {phase === "done"
+          ? renderReport(
+              t("import_unsearched", { count: unsearched.length }),
+              unsearched
+            )
+          : null}
         {phase === "done"
           ? renderReport(
               t("import_not_found", { count: notFound.length }),
