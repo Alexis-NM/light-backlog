@@ -220,6 +220,29 @@ describe("pickBestMatch", () => {
     expect(picked?.game.id).toBe(51);
   });
 
+  test("is unsure of a game found by reading a single letter as a number", () => {
+    const megaMan10 = game(1, "Mega Man 10");
+    const megaManX = game(2, "Mega Man X");
+    // Only Mega Man 10 is on the list's console: it is taken, but flagged.
+    expect(pickBestMatch({ title: "Mega Man X" }, [megaMan10])).toMatchObject({
+      game: megaMan10,
+      confidence: "uncertain",
+    });
+    expect(
+      pickBestMatch({ title: "Mega Man X" }, [megaMan10, megaManX])
+    ).toMatchObject({ game: megaManX, confidence: "exact" });
+    // Typed as a number, or with a longer numeral, nothing is in doubt.
+    expect(
+      pickBestMatch({ title: "Final Fantasy 10" }, [game(3, "Final Fantasy X")])
+        ?.confidence
+    ).toBe("exact");
+    expect(
+      pickBestMatch({ title: "Final Fantasy VII" }, [
+        game(4, "Final Fantasy 7"),
+      ])?.confidence
+    ).toBe("exact");
+  });
+
   test("gives up when no candidate resembles the title", () => {
     expect(
       pickBestMatch(hints("Halo"), [game(60, "Elden Ring")])

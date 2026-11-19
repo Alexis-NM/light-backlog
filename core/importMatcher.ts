@@ -293,8 +293,29 @@ export function pickBestMatch(
   if (!best) {
     return;
   }
-  best.confidence = confidenceOf(best.nameScore);
+  best.confidence = readsLetterAsNumber(hints.title, best.game)
+    ? "uncertain"
+    : confidenceOf(best.nameScore);
   return best;
+}
+
+const LONE_ROMAN_LETTER_RE = /(?:^| )[ivx](?: |$)/;
+
+/**
+ * "Mega Man X" is not "Mega Man 10": a single letter read as a Roman numeral
+ * may just be a letter. A game found only by reading it as a number is worth
+ * a check, however close the names then look.
+ */
+function readsLetterAsNumber(title: string, game: MatchCandidate): boolean {
+  const typed = normalizeTitle(title);
+  if (!LONE_ROMAN_LETTER_RE.test(typed)) {
+    return false;
+  }
+  const names = [game.name, ...(game.altNames ?? [])].map(normalizeTitle);
+  return (
+    !names.includes(typed) &&
+    names.some((name) => looseTitle(name) === looseTitle(typed))
+  );
 }
 
 function confidenceOf(nameScore: number): MatchConfidence {
