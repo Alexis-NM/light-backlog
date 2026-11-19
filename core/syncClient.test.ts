@@ -509,6 +509,40 @@ describe("syncOnce", () => {
     expect(changes.entries.map((one) => one.updatedAt)).toEqual([9000]);
   });
 
+  test("an entry deleted, added again, then changed during the exchange keeps the change", async () => {
+    const server = fakeServer();
+    const phone = device(sample());
+    await sync(phone, server);
+
+    deleteEntry(phone, 2, 7000);
+    phone.local = {
+      ...phone.local,
+      library: { ...phone.local.library, 2: entry(2, 7500) },
+    };
+    let edited = false;
+    await syncOnce({
+      getLocal: () => phone.local,
+      getState: () => phone.state,
+      commit: (local, state) => {
+        phone.local = local;
+        phone.state = state;
+      },
+      post: (request) => {
+        if (!edited) {
+          edited = true;
+          editEntry(phone, 2, { rating: 4.5, updatedAt: 9000 });
+        }
+        return server.post(request);
+      },
+    });
+
+    // The echo is older than the entry, though newer than its deletion.
+    expect(phone.local.library[2].rating).toBe(4.5);
+    const { changes } = pendingChanges(phone.local, phone.state as SyncState);
+    expect(changes.entries.map((one) => one.updatedAt)).toEqual([9000]);
+    expect(phone.state?.tombstones).toEqual(noChanges());
+  });
+
   test("a deletion made during the exchange stands against an older change", async () => {
     const server = fakeServer();
     const phone = device(sample());
@@ -569,6 +603,42 @@ describe("syncOnce", () => {
 
     expect(tablet.local.lists.map((one) => one.id)).toEqual(["list_b"]);
     expect(phone.local.lists.map((one) => one.id)).toEqual(["list_b"]);
+  });
+
+  test("a list deleted here, then changed elsewhere, comes back with its games", async () => {
+    const server = fakeServer();
+    const phone = device(sample());
+    await sync(phone, server);
+    const tablet = device();
+    await sync(tablet, server);
+
+    const [listA] = phone.local.lists;
+    phone.local = { ...phone.local, lists: phone.local.lists.slice(1) };
+    phone.state = {
+      ...(phone.state as SyncState),
+      tombstones: addTombstones(
+        (phone.state as SyncState).tombstones,
+        deletedLists([listA], 7000)
+      ),
+    };
+    tablet.local = {
+      ...tablet.local,
+      lists: tablet.local.lists.map((one) =>
+        one.id === "list_a" ? { ...one, name: "Renamed", updatedAt: 8000 } : one
+      ),
+    };
+    await sync(tablet, server);
+    await sync(phone, server);
+
+    // Its games did not change: only reading everything again brings them.
+    const back = phone.local.lists.find((one) => one.id === "list_a");
+    expect(back?.name).toBe("Renamed");
+    expect(Object.keys(back?.items ?? {})).toEqual(["1", "3"]);
+    expect(phone.state?.tombstones).toEqual(noChanges());
+    expect(
+      pendingChanges(phone.local, phone.state as SyncState).changes
+    ).toEqual(noChanges());
+    expect(server.live(server.tables.items)).toHaveLength(2);
   });
 
   test("a game removed from a list leaves it on the other device", async () => {

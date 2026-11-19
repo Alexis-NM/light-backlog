@@ -412,6 +412,16 @@ const fromSyncList = (
   items: known?.items ?? {},
 });
 
+/**
+ * The local version of an element: what is there, or its deletion not sent
+ * yet. An element deleted then added again has both: the latest one counts.
+ */
+const localVersion = <T extends Dated>(
+  known: T | undefined,
+  deleted: T | undefined
+): T | undefined =>
+  known && deleted && supersedes(deleted, known) ? deleted : (known ?? deleted);
+
 function mergeEntries(
   library: LocalData["library"],
   deleted: Map<string, SyncEntry>,
@@ -422,7 +432,12 @@ function mergeEntries(
   for (const entry of incoming) {
     const key = entryKey(entry);
     const known = next[entry.game.id];
-    if (supersedes(entry, deleted.get(key) ?? (known && toSyncEntry(known)))) {
+    if (
+      supersedes(
+        entry,
+        localVersion(known && toSyncEntry(known), deleted.get(key))
+      )
+    ) {
       deleted.delete(key);
       if (next === library) {
         next = { ...library };
@@ -446,7 +461,10 @@ function mergeLists(
   for (const list of incoming) {
     const known = lists.get(list.id);
     if (
-      supersedes(list, deleted.get(list.id) ?? (known && toSyncList(known)))
+      supersedes(
+        list,
+        localVersion(known && toSyncList(known), deleted.get(list.id))
+      )
     ) {
       deleted.delete(list.id);
       changed = true;
@@ -477,7 +495,7 @@ function mergeItems(
     if (
       supersedes(
         item,
-        deleted.get(key) ?? (known && toSyncItem(list.id, known))
+        localVersion(known && toSyncItem(list.id, known), deleted.get(key))
       )
     ) {
       deleted.delete(key);
@@ -645,6 +663,23 @@ export function settle(
   };
 }
 
+/**
+ * Whether a list deleted here comes back, changed elsewhere after its
+ * deletion. Its games were dropped here with it, and none of them changed:
+ * they are behind the cursor.
+ */
+function bringsBackList(tombstones: SyncChanges, incoming: SyncChanges) {
+  const deleted = byKey(tombstones.lists, listKey);
+  return incoming.lists.some((list) => {
+    const marker = deleted.get(list.id);
+    return (
+      marker !== undefined &&
+      list.deletedAt === undefined &&
+      supersedes(list, marker)
+    );
+  });
+}
+
 export interface SyncSession {
   /** Called once the exchange is over, with everything to store at once. */
   commit: (local: LocalData, state: SyncState) => void;
@@ -659,7 +694,8 @@ export interface SyncSession {
 /**
  * One sync: sends what the server lacks, receives what changed since the
  * cursor, merges it into the data as it is by then, and commits it all at
- * once, in the same tick as the merge.
+ * once, in the same tick as the merge. When a list deleted here comes back,
+ * everything is read again, to bring its games back with it.
  */
 export async function syncOnce(
   session: SyncSession,
@@ -670,12 +706,11 @@ export async function syncOnce(
     return { received: 0, sent: 0, skipped: 0 };
   }
   const { changes: sent, skipped } = pendingChanges(session.getLocal(), before);
-  const { cursor, received } = await exchange(
-    sent,
-    before.cursor,
-    session.post,
-    batchSize
-  );
+  const since = await exchange(sent, before.cursor, session.post, batchSize);
+  const deletedHere = session.getState()?.tombstones ?? noChanges();
+  const { cursor, received } = bringsBackList(deletedHere, since.received)
+    ? await exchange(noChanges(), 0, session.post, batchSize)
+    : since;
   const state = session.getState();
   if (!state) {
     return { received: 0, sent: 0, skipped };
