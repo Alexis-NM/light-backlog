@@ -139,6 +139,8 @@ const en = {
     "Replace everything with this backup ({games} games, {lists} lists)? Current data will be lost.",
   backup_restore_confirm_synced:
     "Replace everything with this backup ({games} games, {lists} lists)? Current data will be lost, and sync will be turned off.",
+  backup_restore_credentials:
+    "Its IGDB credentials will replace the ones entered here.",
   backup_restore: "Restore",
   backup_restore_done: "Backup restored.",
   backup_restore_error: "Could not restore the backup.",
@@ -365,6 +367,8 @@ const fr: Record<TranslationKey, string> = {
     "Tout remplacer par cette sauvegarde ({games} jeux, {lists} listes) ? Les données actuelles seront perdues.",
   backup_restore_confirm_synced:
     "Tout remplacer par cette sauvegarde ({games} jeux, {lists} listes) ? Les données actuelles seront perdues, et la synchro sera coupée.",
+  backup_restore_credentials:
+    "Ses identifiants IGDB remplaceront ceux saisis ici.",
   backup_restore: "Restaurer",
   backup_restore_done: "Sauvegarde restaurée.",
   backup_restore_error: "Impossible de restaurer la sauvegarde.",

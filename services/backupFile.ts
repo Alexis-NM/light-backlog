@@ -47,11 +47,20 @@ export async function readBackupFile(): Promise<Backup> {
   if (result.canceled || !asset) {
     throw new BackupError("cancelled", "File picker cancelled.");
   }
+  // The picker gave a copy, in the app's cache. It may hold IGDB keys: it
+  // goes once read, whatever the outcome.
+  const copy = new File(asset.uri);
   let text: string;
   try {
-    text = await new File(asset.uri).text();
+    text = await copy.text();
   } catch {
     throw new BackupError("read", "Could not read the file.");
+  } finally {
+    try {
+      copy.delete();
+    } catch {
+      // Left to the system, which clears the cache when it needs room.
+    }
   }
   return parseBackup(text);
 }

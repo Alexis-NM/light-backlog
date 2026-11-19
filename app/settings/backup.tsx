@@ -70,17 +70,17 @@ export default function BackupScreen() {
     try {
       const backup = await readBackupFile();
       const games = Object.keys(backup.library).length;
+      const question = t(
+        serverAddress
+          ? "backup_restore_confirm_synced"
+          : "backup_restore_confirm",
+        { games, lists: backup.lists.length }
+      );
       confirm({
         title: t("backup_import"),
-        message: t(
-          serverAddress
-            ? "backup_restore_confirm_synced"
-            : "backup_restore_confirm",
-          {
-            games,
-            lists: backup.lists.length,
-          }
-        ),
+        message: backup.credentials
+          ? `${question} ${t("backup_restore_credentials")}`
+          : question,
         confirmText: t("backup_restore"),
         onConfirm: () => {
           applyBackup(backup);
