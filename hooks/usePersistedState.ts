@@ -1,53 +1,33 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCallback, useEffect, useRef, useState } from "react";
-
-type Reading = "pending" | "done" | "failed";
+import { useCallback, useEffect, useState } from "react";
 
 /**
- * State saved under `key`. The third item tells when the saved value has been
- * read, and gives the latest value, set but maybe not rendered yet: a change
- * built on it cannot undo another one made in the same tick. A saved value
- * that cannot be read is left as it is in storage, and `unreadable` says so:
- * `loaded` then stays false.
+ * A setting saved under `key`. Until the saved value is read, or when it
+ * cannot be, the setting has its default value; what is stored is left as it
+ * is until the next change.
  */
 export function usePersistedState<T>(key: string, defaultValue: T) {
   const [value, setValue] = useState<T>(defaultValue);
-  const [reading, setReading] = useState<Reading>("pending");
-  const latest = useRef(value);
 
   useEffect(() => {
     AsyncStorage.getItem(key)
       .then((stored) => {
         if (stored !== null) {
-          const parsed: T = JSON.parse(stored);
-          latest.current = parsed;
-          setValue(parsed);
+          setValue(JSON.parse(stored));
         }
-        setReading("done");
       })
-      .catch(() => setReading("failed"));
+      .catch(() => {
+        // Unreadable: the default stays.
+      });
   }, [key]);
 
   const setPersistedValue = useCallback(
     async (newValue: T) => {
-      latest.current = newValue;
       setValue(newValue);
       await AsyncStorage.setItem(key, JSON.stringify(newValue));
-      // What is stored is known again.
-      setReading((current) => (current === "failed" ? "done" : current));
     },
     [key]
   );
 
-  const getLatest = useCallback(() => latest.current, []);
-
-  return [
-    value,
-    setPersistedValue,
-    {
-      getLatest,
-      loaded: reading === "done",
-      unreadable: reading === "failed",
-    },
-  ] as const;
+  return [value, setPersistedValue] as const;
 }

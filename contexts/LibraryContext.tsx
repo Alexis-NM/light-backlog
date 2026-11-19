@@ -3,7 +3,10 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
   changeTime,
@@ -15,27 +18,30 @@ import {
   sameRatings,
 } from "@/core/game";
 import { deletedEntries } from "@/core/syncClient";
-import { usePersistedState } from "@/hooks/usePersistedState";
+import {
+  type Library,
+  loadLibrary,
+  replaceLibrary,
+  saveLibraryChanges,
+} from "@/services/libraryStorage";
 import { saveInBackground } from "@/services/saveFailures";
 import { notifyLocalChange, recordDeletions } from "@/services/syncStore";
-
-type Entries = Record<number, LibraryEntry>;
 
 interface LibraryContextType {
   addMany: (games: Game[], status: GameStatus, platforms?: string[]) => void;
   addPlatform: (game: Game, platform: string) => void;
   clearAll: () => void;
   /** Stores what the sync merged. */
-  commitFromSync: (entries: Entries) => void;
-  entries: Entries;
+  commitFromSync: (entries: Library) => void;
+  entries: Library;
   /** The latest entries, maybe not rendered yet. */
-  getEntries: () => Entries;
+  getEntries: () => Library;
   getEntry: (id: number) => LibraryEntry | undefined;
   /** The saved library has been read. */
   loaded: boolean;
   removeEntry: (id: number) => void;
   removeMany: (ids: number[]) => void;
-  replaceAll: (entries: Entries) => Promise<void>;
+  replaceAll: (entries: Library) => Promise<void>;
   /** Stores IGDB ratings by game id without touching the entries' dates. */
   setIgdbRatings: (ratings: Record<number, StoredRatings>) => void;
   setRating: (game: Game, rating: number) => void;
@@ -69,16 +75,38 @@ const LibraryContext = createContext<LibraryContextType>({
 export const useLibrary = () => useContext(LibraryContext);
 
 export const LibraryProvider = ({ children }: { children: ReactNode }) => {
-  const [entries, setEntries, { getLatest, loaded, unreadable }] =
-    usePersistedState<Entries>("library", {});
-
+  const [entries, setEntries] = useState<Library>({});
+  const [loaded, setLoaded] = useState(false);
+  const [unreadable, setUnreadable] = useState(false);
   // Changes start from the latest entries, not the rendered ones, so that a
   // sync and a tap in the same tick cannot undo each other.
+  const latest = useRef(entries);
 
-  /** Shown at once, saved in the background. */
+  const commit = useCallback((next: Library) => {
+    latest.current = next;
+    setEntries(next);
+  }, []);
+
+  const getLatest = useCallback(() => latest.current, []);
+
+  useEffect(() => {
+    loadLibrary()
+      .then((stored) => {
+        commit(stored);
+        setLoaded(true);
+      })
+      // It stays as it is in storage, and nothing is written over it.
+      .catch(() => setUnreadable(true));
+  }, [commit]);
+
+  /** Shown at once, saved in the background: only the entries that differ. */
   const save = useCallback(
-    (next: Entries) => saveInBackground(setEntries(next)),
-    [setEntries]
+    (next: Library) => {
+      const before = latest.current;
+      commit(next);
+      saveInBackground(saveLibraryChanges(before, next));
+    },
+    [commit]
   );
 
   /**
@@ -87,7 +115,7 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
    * be written over it.
    */
   const change = useCallback(
-    (next: Entries, removed: LibraryEntry[] = []) => {
+    (next: Library, removed: LibraryEntry[] = []) => {
       if (!loaded) {
         return;
       }
@@ -250,12 +278,17 @@ export const LibraryProvider = ({ children }: { children: ReactNode }) => {
   // even over a library that could not be read, and its failure is the
   // caller's to tell.
   const replaceAll = useCallback(
-    (next: Entries) => setEntries(next),
-    [setEntries]
+    async (next: Library) => {
+      commit(next);
+      await replaceLibrary(next);
+      setUnreadable(false);
+      setLoaded(true);
+    },
+    [commit]
   );
 
   const commitFromSync = useCallback(
-    (next: Entries) => {
+    (next: Library) => {
       if (next !== getLatest()) {
         save(next);
       }
