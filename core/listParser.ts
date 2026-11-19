@@ -4,7 +4,9 @@
 
 const NEWLINE_RE = /\r?\n/;
 const DELIM_RE = /[,;]/;
-const HEADER_RE = /name|title|game/i;
+// A header cell names its column: "Name", "Title", "Game", "Game title"… A
+// title that merely contains one of these words is not one.
+const HEADER_CELL_RE = /^(?:(?:game\s+)?(?:name|title)|game)s?$/i;
 const LIST_MARKER_RE = /^[-*+]\s+/;
 const ORDERED_RE = /^\d+\.\s+/;
 const MD_LINK_RE = /\[([^\]]+)\]\([^)]*\)/;
@@ -33,13 +35,10 @@ export function parseGameTitles(text: string): string[] {
   const lines = text.split(NEWLINE_RE);
   const out: string[] = [];
 
-  let hasHeader = false;
-  let nameIndex = 0;
-  if (lines.length > 0 && DELIM_RE.test(lines[0]) && HEADER_RE.test(lines[0])) {
-    hasHeader = true;
-    const idx = splitCsv(lines[0]).findIndex((col) => HEADER_RE.test(col));
-    nameIndex = idx >= 0 ? idx : 0;
-  }
+  const firstCells = DELIM_RE.test(lines[0]) ? splitCsv(lines[0]) : [];
+  const headerIndex = firstCells.findIndex((cell) => HEADER_CELL_RE.test(cell));
+  const hasHeader = headerIndex >= 0;
+  const nameIndex = hasHeader ? headerIndex : 0;
 
   // Without a header, only treat the text as CSV when most lines are
   // delimited — a lone "Hey You, Pikachu!" in a plain list stays whole.

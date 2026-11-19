@@ -38,6 +38,25 @@ describe("parseGameTitles", () => {
     ]);
   });
 
+  test("reads a header whatever its case, its quotes or its wording", () => {
+    expect(parseGameTitles('"Year";"Game title"\n2006;Okami')).toEqual([
+      "Okami",
+    ]);
+    expect(parseGameTitles("NAME,Platform\nIco,PS2")).toEqual(["Ico"]);
+    expect(parseGameTitles("Games;Year\nIco;2001")).toEqual(["Ico"]);
+  });
+
+  test("a first title that only contains a header word is a title", () => {
+    expect(parseGameTitles("Game Dev Tycoon, 2012\nDoom\nHalo")).toEqual([
+      "Game Dev Tycoon, 2012",
+      "Doom",
+      "Halo",
+    ]);
+    expect(
+      parseGameTitles("Game Dev Tycoon,2012\nUntitled Goose Game,2019")
+    ).toEqual(["Game Dev Tycoon", "Untitled Goose Game"]);
+  });
+
   test("a comma inside one title of a plain list is kept", () => {
     expect(
       parseGameTitles("Hey You, Pikachu!\nPokémon Snap\nMario Party")
