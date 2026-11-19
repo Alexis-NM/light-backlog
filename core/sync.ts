@@ -84,7 +84,9 @@ export interface SyncResponse {
 /** Elements are keyed as the server keys its rows. */
 export const entryKey = (entry: SyncEntry) => String(entry.game.id);
 export const listKey = (list: SyncList) => list.id;
-export const itemKey = (item: SyncItem) => `${item.listId}/${item.game.id}`;
+export const itemKeyOf = (listId: string, gameId: number) =>
+  `${listId}/${gameId}`;
+export const itemKey = (item: SyncItem) => itemKeyOf(item.listId, item.game.id);
 
 /**
  * The most recent change wins, element by element. On a tie the element
@@ -157,10 +159,11 @@ const isId = (value: unknown): value is string => isText(value) && value !== "";
 const isTexts = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every(isText);
 
-const isPlatform = (value: unknown) =>
+export const isPlatform = (value: unknown) =>
   isRecord(value) && isInt32(value.id) && isText(value.name);
 
-const isRating = (value: unknown) =>
+/** An IGDB rating once fetched: a number, or null when IGDB has none. */
+export const isRating = (value: unknown) =>
   value === null || (typeof value === "number" && Number.isFinite(value));
 
 /** IGDB ratings come together: all absent (not fetched yet), or all there (null when IGDB has none). */

@@ -16,10 +16,13 @@ import { sortLists } from "./lists";
 import {
   type Dated,
   entryKey,
+  isPlatform,
+  isRating,
   isSyncEntry,
   isSyncItem,
   isSyncList,
   itemKey,
+  itemKeyOf,
   listKey,
   markDeleted,
   mergeLatest,
@@ -86,14 +89,6 @@ const byKey = <T>(elements: T[], keyOf: (element: T) => string) =>
 
 // ---------------------------------------------------------------------------
 // Local data as sent
-
-const isPlatform = (value: unknown) =>
-  isRecord(value) &&
-  Number.isInteger(value.id) &&
-  typeof value.name === "string";
-
-const isRating = (value: unknown) =>
-  value === null || (typeof value === "number" && Number.isFinite(value));
 
 /** The game as sent: known fields only, an invalid optional one left out. */
 export function cleanGame(game: Game): Game {
@@ -568,7 +563,9 @@ export function applyIncoming(
 const localKeys = (local: LocalData) => ({
   entries: Object.values(local.library).map((entry) => String(entry.game.id)),
   lists: local.lists.map((list) => list.id),
-  items: local.lists.flatMap((list) => listItems(list).map(itemKey)),
+  items: local.lists.flatMap((list) =>
+    Object.values(list.items).map((item) => itemKeyOf(list.id, item.game.id))
+  ),
 });
 
 function knownVersions<T extends Dated>(
@@ -758,10 +755,14 @@ export type FetchLike = (
   init: RequestInit
 ) => Promise<Pick<Response, "status" | "text">>;
 
+/** The server address of a sync endpoint, as syncEndpoint() made it. */
+export const syncServer = (endpoint: string) =>
+  endpoint.endsWith(API_PATH) ? endpoint.slice(0, -API_PATH.length) : endpoint;
+
 /** The sync endpoint of a server address, or undefined when it is not HTTPS. */
 export function syncEndpoint(address: string): string | undefined {
   const base = address.trim().replace(TRAILING_SLASHES, "");
-  const root = base.endsWith(API_PATH) ? base.slice(0, -API_PATH.length) : base;
+  const root = syncServer(base);
   if (
     !root.toLowerCase().startsWith(HTTPS) ||
     root.length <= HTTPS.length ||

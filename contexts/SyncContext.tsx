@@ -26,6 +26,7 @@ import {
   type SyncFailureKind,
   syncEndpoint,
   syncOnce,
+  syncServer,
 } from "@/core/syncClient";
 import { createSyncRunner, type SyncOutcome } from "@/core/syncRunner";
 import { useBackup } from "@/hooks/useBackup";
@@ -39,7 +40,6 @@ import {
 
 const ENDPOINT_KEY = "sync_endpoint";
 const TOKEN_KEY = "sync_token";
-const API_PATH = /\/api\/sync$/;
 
 /** How long the changes must stop before the sync that sends them. */
 const CHANGE_DELAY_MS = 3000;
@@ -337,7 +337,7 @@ export const SyncProvider = ({ children }: { children: ReactNode }) => {
   const igdbRelay = useMemo<IgdbRelay | null>(
     () =>
       server
-        ? { server: server.endpoint.replace(API_PATH, ""), token: server.token }
+        ? { server: syncServer(server.endpoint), token: server.token }
         : null,
     [server]
   );
