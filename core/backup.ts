@@ -62,10 +62,13 @@ const isGame = (value: unknown): value is Game =>
   typeof value.id === "number" &&
   typeof value.name === "string";
 
+/** With its dates: the app has always written them, and sorts and syncs by them. */
 const isEntry = (value: unknown): value is LibraryEntry =>
   isRecord(value) &&
   isGame(value.game) &&
   typeof value.rating === "number" &&
+  typeof value.addedAt === "number" &&
+  typeof value.updatedAt === "number" &&
   GAME_STATUSES.includes(value.status as LibraryEntry["status"]);
 
 const isCredentials = (value: unknown): value is IgdbAuth =>
@@ -260,7 +263,9 @@ export function parseBackup(text: string): Backup {
       data.app === BACKUP_APP &&
       Array.isArray(data.lists) &&
       isRecord(data.library) &&
-      Object.values(data.library).every(isEntry) &&
+      Object.entries(data.library).every(
+        ([key, entry]) => isEntry(entry) && key === String(entry.game.id)
+      ) &&
       isRecord(data.settings)
     )
   ) {

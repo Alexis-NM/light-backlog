@@ -164,6 +164,15 @@ test("rejects an unknown version", () => {
   expectRejected({ ...v1Backup, version: 3 });
 });
 
+test("rejects a library entry without its dates or filed under another id", () => {
+  const { addedAt, ...notAdded } = entry;
+  const { updatedAt, ...notUpdated } = entry;
+  expectRejected({ ...v1Backup, library: { 1: notAdded } });
+  expectRejected({ ...v1Backup, library: { 1: notUpdated } });
+  expectRejected({ ...v1Backup, library: { 2: entry } });
+  expectRejected({ ...v1Backup, library: { 1: "not an entry" } });
+});
+
 describe("redated", () => {
   const older: LibraryEntry = { ...entry, game: mario, updatedAt: 150 };
   const restored = redated(
