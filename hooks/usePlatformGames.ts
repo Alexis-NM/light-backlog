@@ -4,10 +4,9 @@ import type { Game } from "@/core/game";
 import {
   gamesByPlatform,
   type IgdbAccess,
-  IgdbError,
   PLATFORM_PAGE_SIZE,
 } from "@/core/igdb";
-import { refusedMessage, useIgdbAccess } from "@/hooks/useIgdbAccess";
+import { igdbErrorText, useIgdbAccess } from "@/hooks/useIgdbAccess";
 
 type Phase = "idle" | "loading" | "done" | "error";
 
@@ -76,19 +75,6 @@ export function usePlatformGames(platformId: number | null) {
       ? loaded
       : null;
 
-  const describeError = (error: unknown) => {
-    if (error instanceof IgdbError && error.kind === "network") {
-      return t("network_error");
-    }
-    if (error instanceof IgdbError && error.kind === "auth") {
-      return t(refusedMessage(access));
-    }
-    if (error instanceof IgdbError) {
-      return error.message;
-    }
-    return t("error");
-  };
-
   const loadMore = () => {
     if (!current?.hasMore || loadingMoreRef.current) {
       return;
@@ -128,7 +114,9 @@ export function usePlatformGames(platformId: number | null) {
     games: current?.games ?? NO_GAMES,
     phase: phaseOf(access !== null && platformId !== null, current),
     loadingMore,
-    errorText: current?.failure ? describeError(current.failure.error) : "",
+    errorText: current?.failure
+      ? igdbErrorText(current.failure.error, access, t)
+      : "",
     loadMore,
   };
 }

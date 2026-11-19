@@ -20,10 +20,10 @@ import { useInvertColors } from "@/contexts/InvertColorsContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
-import { IgdbError, searchGamesBatch, toGame } from "@/core/igdb";
+import { searchGamesBatch, toGame } from "@/core/igdb";
 import { type ImportMatch, matchImportTitles } from "@/core/importMatcher";
 import { parseGameTitles } from "@/core/listParser";
-import { refusedMessage, useIgdbAccess } from "@/hooks/useIgdbAccess";
+import { igdbErrorText, useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { n } from "@/utils/scaling";
 
 type Phase = "idle" | "matching" | "done" | "error";
@@ -102,16 +102,6 @@ export default function ImportListScreen() {
     }
   };
 
-  const describeError = (error: unknown) => {
-    if (error instanceof IgdbError && error.kind === "auth") {
-      return t(refusedMessage(access));
-    }
-    if (error instanceof IgdbError && error.kind === "network") {
-      return t("network_error");
-    }
-    return error instanceof IgdbError ? error.message : t("error");
-  };
-
   const runImport = async () => {
     if (source.trim().length === 0 || running) {
       return;
@@ -138,7 +128,7 @@ export default function ImportListScreen() {
         { consoles, onProgress: (done, total) => setProgress({ done, total }) }
       );
     } catch (error) {
-      setMessage(describeError(error));
+      setMessage(igdbErrorText(error, access, t));
       setPhase("error");
       return;
     } finally {

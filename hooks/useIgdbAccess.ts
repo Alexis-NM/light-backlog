@@ -1,6 +1,6 @@
 import { useCredentials } from "@/contexts/CredentialsContext";
 import { useSync } from "@/contexts/SyncContext";
-import { type IgdbAccess, isIgdbRelay } from "@/core/igdb";
+import { type IgdbAccess, IgdbError, isIgdbRelay } from "@/core/igdb";
 import type { TranslationKey } from "@/core/translations";
 
 /**
@@ -16,3 +16,18 @@ export function useIgdbAccess(): IgdbAccess | null {
 /** What to say when IGDB refuses: the keys, or the sync server's token. */
 export const refusedMessage = (access: IgdbAccess | null): TranslationKey =>
   access && isIgdbRelay(access) ? "igdb_relay_refused" : "creds_invalid";
+
+/** What to tell the user when a request to IGDB fails. */
+export function igdbErrorText(
+  error: unknown,
+  access: IgdbAccess | null,
+  t: (key: TranslationKey) => string
+): string {
+  if (!(error instanceof IgdbError)) {
+    return t("error");
+  }
+  if (error.kind === "auth") {
+    return t(refusedMessage(access));
+  }
+  return error.kind === "network" ? t("network_error") : error.message;
+}

@@ -13,8 +13,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { platformIdsFor } from "@/core/consoles";
 import type { Game } from "@/core/game";
-import { IgdbError, searchGames } from "@/core/igdb";
-import { refusedMessage, useIgdbAccess } from "@/hooks/useIgdbAccess";
+import { searchGames } from "@/core/igdb";
+import { igdbErrorText, useIgdbAccess } from "@/hooks/useIgdbAccess";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { n } from "@/utils/scaling";
 
@@ -68,15 +68,7 @@ export default function SearchScreen() {
       setResults(found);
       setPhase("done");
     } catch (error) {
-      if (error instanceof IgdbError && error.kind === "auth") {
-        setErrorText(t(refusedMessage(access)));
-      } else if (error instanceof IgdbError && error.kind === "network") {
-        setErrorText(t("network_error"));
-      } else if (error instanceof IgdbError) {
-        setErrorText(error.message);
-      } else {
-        setErrorText(t("error"));
-      }
+      setErrorText(igdbErrorText(error, access, t));
       setPhase("error");
     }
   };
