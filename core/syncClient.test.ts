@@ -825,6 +825,9 @@ describe("syncEndpoint", () => {
       "http://backlog.ondes.dev",
       "backlog.ondes.dev",
       "https://a b",
+      "https://a\tb",
+      "https://backlog.ondes.dev?next=1",
+      "https://backlog.ondes.dev/#top",
     ]) {
       expect(syncEndpoint(address)).toBeUndefined();
     }

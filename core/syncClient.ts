@@ -747,6 +747,8 @@ export async function syncOnce(
 
 const HTTPS = "https://";
 const TRAILING_SLASHES = /\/+$/;
+/** What an address cannot hold: the path would be added after it. */
+const SPACE_QUERY_OR_FRAGMENT = /[\s?#]/;
 const API_PATH = "/api/sync";
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -763,7 +765,7 @@ export function syncEndpoint(address: string): string | undefined {
   if (
     !root.toLowerCase().startsWith(HTTPS) ||
     root.length <= HTTPS.length ||
-    root.includes(" ")
+    SPACE_QUERY_OR_FRAGMENT.test(root)
   ) {
     return;
   }
