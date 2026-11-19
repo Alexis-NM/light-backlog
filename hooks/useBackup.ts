@@ -7,7 +7,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useLibrary } from "@/contexts/LibraryContext";
 import { useLists } from "@/contexts/ListsContext";
 import { useSort } from "@/contexts/SortContext";
-import { BACKUP_APP, BACKUP_VERSION, type Backup } from "@/core/backup";
+import {
+  BACKUP_APP,
+  BACKUP_VERSION,
+  type Backup,
+  redated,
+} from "@/core/backup";
 
 /** Applies a restored setting only when the backup actually carries it. */
 const apply = <T>(value: T | undefined, set: (value: T) => Promise<void>) =>
@@ -66,7 +71,8 @@ export function useBackup() {
   );
 
   const restoreBackup = useCallback(
-    async ({ credentials, library, lists, settings }: Backup) => {
+    async ({ credentials, settings, ...data }: Backup) => {
+      const { library, lists } = redated(data, Date.now());
       await Promise.all([
         replaceLists(lists),
         replaceLibrary(library),

@@ -3,6 +3,7 @@ import {
   BACKUP_VERSION,
   type Backup,
   parseBackup,
+  redated,
   serializeBackup,
 } from "./backup";
 import type { GameList, LibraryEntry } from "./game";
@@ -161,4 +162,35 @@ describe("parseBackup, version 2", () => {
 
 test("rejects an unknown version", () => {
   expectRejected({ ...v1Backup, version: 3 });
+});
+
+describe("redated", () => {
+  const older: LibraryEntry = { ...entry, game: mario, updatedAt: 150 };
+  const restored = redated(
+    { library: { 1: entry, 2: older }, lists: [v2List] },
+    9000
+  );
+
+  test("dates the entries at the restore, in the same order", () => {
+    expect(restored.library[1]).toEqual({ ...entry, updatedAt: 9000 });
+    expect(restored.library[2]).toEqual({ ...older, updatedAt: 8999 });
+  });
+
+  test("dates each list and its games at the restore, in the same order", () => {
+    expect(restored.lists).toEqual([
+      {
+        ...v2List,
+        updatedAt: 9000,
+        items: {
+          1: { addedAt: 8999, game: zelda },
+          2: { addedAt: 9000, game: mario },
+        },
+      },
+    ]);
+  });
+
+  test("leaves what it is given as it is", () => {
+    expect(entry.updatedAt).toBe(200);
+    expect(v2List.items[2].addedAt).toBe(2500);
+  });
 });

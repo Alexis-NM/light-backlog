@@ -105,7 +105,9 @@ address and its token. The token is stored with `expo-secure-store`.
 - Before the first sync, the app keeps a copy of its data, which **Restore the
   copy** puts back (turning sync off).
 - **Disconnect** turns sync off: the data stays on the phone. Restoring a
-  backup also turns sync off.
+  backup also turns sync off. What a backup restores is dated at the restore:
+  once you connect again, it wins over what the server changed or deleted
+  since the backup, instead of being deleted again.
 - Without IGDB credentials in the app, search and browsing go through the
   server: `POST /api/igdb/<endpoint>`, with the Apicalypse query as the body
   and the same token (see `core/igdb.ts`).

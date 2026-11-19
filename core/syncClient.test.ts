@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { redated } from "./backup";
 import type { Game, GameList, LibraryEntry, ListItem } from "./game";
 import {
   type Dated,
@@ -639,6 +640,41 @@ describe("syncOnce", () => {
       pendingChanges(phone.local, phone.state as SyncState).changes
     ).toEqual(noChanges());
     expect(server.live(server.tables.items)).toHaveLength(2);
+  });
+
+  test("a backup restored after everything was deleted stays, once connected again", async () => {
+    const server = fakeServer();
+    const phone = device(sample());
+    await sync(phone, server);
+    const backup = phone.local;
+
+    // The library is cleared at 7000, here and on the server.
+    deleteEntry(phone, 1, 7000);
+    deleteEntry(phone, 2, 7000);
+    phone.state = {
+      ...(phone.state as SyncState),
+      tombstones: addTombstones(
+        (phone.state as SyncState).tombstones,
+        deletedLists(phone.local.lists, 7000)
+      ),
+    };
+    phone.local = { library: {}, lists: [] };
+    await sync(phone, server);
+    expect(server.live(server.tables.entries)).toHaveLength(0);
+    expect(server.live(server.tables.lists)).toHaveLength(0);
+
+    // A restore turns sync off; connecting again starts from nothing known.
+    const restored = device(redated(backup, 9000));
+    await sync(restored, server);
+
+    expect(Object.keys(restored.local.library)).toEqual(["1", "2"]);
+    expect(restored.local.lists.map((one) => one.id)).toEqual([
+      "list_a",
+      "list_b",
+    ]);
+    expect(Object.keys(restored.local.lists[0].items)).toEqual(["1", "3"]);
+    expect(server.live(server.tables.entries)).toHaveLength(2);
+    expect(server.live(server.tables.lists)).toHaveLength(2);
   });
 
   test("a game removed from a list leaves it on the other device", async () => {

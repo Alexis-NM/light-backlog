@@ -187,6 +187,54 @@ function parseLists(version: unknown, raw: unknown[]): GameList[] | undefined {
   return;
 }
 
+/**
+ * The same elements, oldest first: the most recent one dated `now`, each one
+ * before it a millisecond earlier.
+ */
+function datedUpTo<T>(
+  elements: T[],
+  timeOf: (element: T) => number,
+  withTime: (element: T, time: number) => T,
+  now: number
+): T[] {
+  const oldestFirst = [...elements].sort((a, b) => timeOf(a) - timeOf(b));
+  const first = now - oldestFirst.length + 1;
+  return oldestFirst.map((element, rank) => withTime(element, first + rank));
+}
+
+/**
+ * What a backup holds, dated at the restore, in the same order. With its own
+ * dates, restored data loses to whatever a sync server changed or deleted
+ * since the backup: on the next connection, a library cleared by mistake
+ * would be cleared again. An entry keeps the date it was added.
+ */
+export function redated(
+  { library, lists }: Pick<Backup, "library" | "lists">,
+  now: number
+): Pick<Backup, "library" | "lists"> {
+  const entries = datedUpTo(
+    Object.values(library),
+    (entry) => entry.updatedAt,
+    (entry, updatedAt) => ({ ...entry, updatedAt }),
+    now
+  );
+  return {
+    library: Object.fromEntries(entries.map((entry) => [entry.game.id, entry])),
+    lists: lists.map((list) => ({
+      ...list,
+      updatedAt: now,
+      items: Object.fromEntries(
+        datedUpTo(
+          Object.values(list.items),
+          (item) => item.addedAt,
+          (item, addedAt) => ({ ...item, addedAt }),
+          now
+        ).map((item) => [item.game.id, item])
+      ),
+    })),
+  };
+}
+
 export function backupFileName(date = new Date()) {
   return `${BACKUP_APP}-backup-${date.toISOString().slice(0, 10)}.json`;
 }
